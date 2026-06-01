@@ -1,0 +1,413 @@
+
+=========================================
+STEP 1236: replace_file_content
+Instruction: "Define simulateReply and manualMigrate callbacks and render the corresponding action buttons in the ObDetailModal header."
+Description: "Add simulateReply and manualMigrate buttons/logic inside ObDetailModal in public/index.html to allow testing of the outbound bifurcated flow directly from the CRM interface."
+
+--- TARGET CONTENT ---
+"  const ObDetailModal = ({\n    ol\n  }) => {\n    const [history, setHistory] = useState([]);\n    const [commLog, setCommLog] = useState([]);\n    const [loading, setLoading] = useState(true);\n    const [replyMsg, setReplyMsg] = useState('');\n    const [replyChannel, setReplyChannel] = useState(ol.channel || 'whatsapp');\n    useEffect(() => {\n      const load = async () => {\n        const [hist, comm] = await Promise.all([B.getObHistory(ol.id), B.getCommLog({\n          ob_lead_id: ol.id\n        })]);\n        setHistory(hist || []);\n        setCommLog(comm || []);\n        setLoading(false);\n      };\n      load();\n    }, [ol.id]);\n    const sendReply = async () => {\n      if (!replyMsg.trim()) return;\n      await B.sendMessage({\n        channel: replyChannel,\n        ob_lead_id: ol.id,\n        phone: ol.phone,\n        email: ol.email,\n        message: replyMsg,\n        subject: `Re: ${ol.company || 'Proposta'}`\n      });\n      setReplyMsg('');\n      const [hist, comm] = await Promise.all([B.getObHistory(ol.id), B.getCommLog({\n        ob_lead_id: ol.id\n      })]);\n      setHistory(hist || []);\n      setCommLog(comm || []);\n    };\n    return /*#__PURE__*/React.createElement(Modal, {\n      onClose: () => setModal({\n        type: null\n      })\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        alignItems: 'center',\n        gap: 12,\n        marginBottom: 16\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        width: 40,\n        height: 40,\n        borderRadius: 10,\n        background: 'var(--amber)',\n        display: 'flex',\n        alignItems: 'center',\n        justifyContent: 'center',\n        fontWeight: 900,\n        color: 'black',\n        fontSize: 16\n      }\n    }, ol.name?.charAt(0) || '?'), /*#__PURE__*/React.createElement(\"div\", null, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        fontWeight: 800,\n        color: 'white',\n        fontSize: 18\n      }\n 
+<truncated 802 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const ObDetailModal = ({\n    ol\n  }) => {\n    const [history, setHistory] = useState([]);\n    const [commLog, setCommLog] = useState([]);\n    const [loading, setLoading] = useState(true);\n    const [replyMsg, setReplyMsg] = useState('');\n    const [replyChannel, setReplyChannel] = useState(ol.channel || 'whatsapp');\n    useEffect(() => {\n      const load = async () => {\n        const [hist, comm] = await Promise.all([B.getObHistory(ol.id), B.getCommLog({\n          ob_lead_id: ol.id\n        })]);\n        setHistory(hist || []);\n        setCommLog(comm || []);\n        setLoading(false);\n      };\n      load();\n    }, [ol.id]);\n    const sendReply = async () => {\n      if (!replyMsg.trim()) return;\n      await B.sendMessage({\n        channel: replyChannel,\n        ob_lead_id: ol.id,\n        phone: ol.phone,\n        email: ol.email,\n        message: replyMsg,\n        subject: `Re: ${ol.company || 'Proposta'}`\n      });\n      setReplyMsg('');\n      const [hist, comm] = await Promise.all([B.getObHistory(ol.id), B.getCommLog({\n        ob_lead_id: ol.id\n      })]);\n      setHistory(hist || []);\n      setCommLog(comm || []);\n    };\n    const simulateReply = async () => {\n      setLoading(true);\n      await B.replyObLead(ol.id);\n      await loadData();\n      setModal({\n        type: null\n      });\n    };\n    const manualMigrate = async () => {\n      setLoading(true);\n      await B.migrateObLead(ol.id);\n      await loadData();\n      setModal({\n        type: null\n      });\n    };\n    return /*#__PURE__*/React.createElement(Modal, {\n      onClose: () => setModal({\n        type: null\n      })\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        alignItems: 'center',\n        gap: 12,\n        marginBottom: 16\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        width: 40,\n        height: 40,\n        borderRadius: 10,\n        background: 'var(--amber)',\n        display: 'flex',\n       
+<truncated 1833 bytes>
+
+=========================================
+STEP 1929: replace_file_content
+Instruction: "Replace React.createElement calls for nested views with direct function executions"
+Description: "Fix UI flashing and input focus loss by calling nested views as functions"
+
+--- TARGET CONTENT ---
+"    }, /*#__PURE__*/React.createElement(TopBar, null), view === 'kanban' && /*#__PURE__*/React.createElement(KanbanView, null), view === 'outbound' && /*#__PURE__*/React.createElement(OutboundView, null), view === 'indicacoes' && /*#__PURE__*/React.createElement(IndicacoesView, null), view === 'agent' && /*#__PURE__*/React.createElement(AgentView, null), view === 'knowledge' && /*#__PURE__*/React.createElement(KnowledgeView, null), view === 'chat' && /*#__PURE__*/React.createElement(ChatView, null), view === 'partners' && /*#__PURE__*/React.createElement(PartnersView, null), view === 'bi' && /*#__PURE__*/React.createElement(BiView, null));"
+
+--- REPLACEMENT CONTENT ---
+"    }, /*#__PURE__*/React.createElement(TopBar, null), view === 'kanban' && KanbanView(), view === 'outbound' && OutboundView(), view === 'indicacoes' && IndicacoesView(), view === 'agent' && AgentView(), view === 'knowledge' && KnowledgeView(), view === 'chat' && ChatView(), view === 'partners' && PartnersView(), view === 'bi' && BiView());"
+
+=========================================
+STEP 1954: replace_file_content
+Instruction: "Replace nested components `<Content />`, `<TopBar />`, `<Root />`, and modal component calls with direct function executions"
+Description: "Render nested layout views and modals as inline functions instead of React components"
+
+--- TARGET CONTENT ---
+"  const Content = () => {\n    if (loading) return /*#__PURE__*/React.createElement(LoadingScreen, null);\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        flex: 1,\n        overflow: 'hidden'\n      }\n    }, /*#__PURE__*/React.createElement(TopBar, null), view === 'kanban' && KanbanView(), view === 'outbound' && OutboundView(), view === 'indicacoes' && IndicacoesView(), view === 'agent' && AgentView(), view === 'knowledge' && KnowledgeView(), view === 'chat' && ChatView(), view === 'partners' && PartnersView(), view === 'bi' && BiView());\n  };\n  const Modals = () => /*#__PURE__*/React.createElement(React.Fragment, null, modal.type === 'newLead' && /*#__PURE__*/React.createElement(NewLeadModal, null), modal.type === 'leadDetail' && modal.data && /*#__PURE__*/React.createElement(LeadDetailModal, {\n    lead: modal.data\n  }), modal.type === 'partner' && /*#__PURE__*/React.createElement(PartnerModal, {\n    partner: modal.data\n  }), modal.type === 'obDetail' && modal.data && /*#__PURE__*/React.createElement(ObDetailModal, {\n    ol: modal.data\n  }), modal.type === 'approachTemplate' && modal.data && /*#__PURE__*/React.createElement(ApproachTemplateModal, {\n    lead: modal.data\n  }), modal.type === 'stageMove' && modal.data && /*#__PURE__*/React.createElement(StageMoveModal, {\n    data: modal.data\n  }), modal.type === 'outputProtocol' && /*#__PURE__*/React.createElement(OutputProtocolModal, null));\n  const Root = () => /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      height: '100vh',\n      width: '100vw',\n      overflow: 'hidden',\n      background: 'var(--black)'\n    }\n  }, /*#__PURE__*/React.createElement(Sidebar, null), /*#__PURE__*/React.createElement(Content, null), /*#__PURE__*/React.createElement(Modals, null));\n  return /*#__PURE__*/React.createElement(Root, null);"
+
+--- REPLACEMENT CONTENT ---
+"  const Content = () => {\n    if (loading) return /*#__PURE__*/React.createElement(LoadingScreen, null);\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        flex: 1,\n        overflow: 'hidden'\n      }\n    }, TopBar(), view === 'kanban' && KanbanView(), view === 'outbound' && OutboundView(), view === 'indicacoes' && IndicacoesView(), view === 'agent' && AgentView(), view === 'knowledge' && KnowledgeView(), view === 'chat' && ChatView(), view === 'partners' && PartnersView(), view === 'bi' && BiView());\n  };\n  const Modals = () => /*#__PURE__*/React.createElement(React.Fragment, null, modal.type === 'newLead' && NewLeadModal(), modal.type === 'leadDetail' && modal.data && LeadDetailModal({\n    lead: modal.data\n  }), modal.type === 'partner' && PartnerModal({\n    partner: modal.data\n  }), modal.type === 'obDetail' && modal.data && ObDetailModal({\n    ol: modal.data\n  }), modal.type === 'approachTemplate' && modal.data && ApproachTemplateModal({\n    lead: modal.data\n  }), modal.type === 'stageMove' && modal.data && StageMoveModal({\n    data: modal.data\n  }), modal.type === 'outputProtocol' && OutputProtocolModal());\n\n  return /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      height: '100vh',\n      width: '100vw',\n      overflow: 'hidden',\n      background: 'var(--black)'\n    }\n  }, Sidebar(), Content(), Modals());"
+
+=========================================
+STEP 1974: replace_file_content
+Instruction: undefined
+Description: "Change ObPipeline to dynamically generate columns based on active cadence steps"
+
+--- TARGET CONTENT ---
+"  const ObPipeline = () => /*#__PURE__*/React.createElement(\"div\", {\n    className: \"grab-scroll\",\n    ref: contentRef,\n    onMouseDown: gsContent.onMouseDown,\n    onMouseMove: gsContent.onMouseMove,\n    onMouseUp: gsContent.onMouseUp,\n    onMouseLeave: gsContent.onMouseLeave,\n    style: {\n      display: 'flex',\n      gap: 12,\n      padding: '16px 24px',\n      overflowX: 'auto',\n      overflowY: 'hidden',\n      flex: 1\n    }\n  }, OB_STAGES.map(s => /*#__PURE__*/React.createElement(\"div\", {\n    key: s.id,\n    className: \"kanban-column\",\n    style: {\n      minWidth: 240,\n      flex: 1,\n      padding: 12\n    }\n  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 8,\n      marginBottom: 12\n    }\n  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      width: 10,\n      height: 10,\n      borderRadius: '50%',\n      background: s.color\n    }\n  }), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      fontWeight: 700,\n      fontSize: 13,\n      color: 'white'\n    }\n  }, s.title), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      marginLeft: 'auto',\n      fontSize: 12,\n      color: '#8b949e'\n    }\n  }, obLeads.filter(l => l.status === s.id).length)), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      maxHeight: 'calc(100vh - 220px)',\n      overflowY: 'auto'\n    }\n  }, obLeads.filter(l => l.status === s.id).map(l => /*#__PURE__*/React.createElement(ObCard, {\n    key: l.id,\n    ol: l\n  }))))));"
+
+--- REPLACEMENT CONTENT ---
+undefined
+
+=========================================
+STEP 1978: replace_file_content
+Instruction: "Insert the new dynamic ObPipeline function before GeladeiraView"
+Description: "Insert new dynamic ObPipeline component in index.html"
+
+--- TARGET CONTENT ---
+"\n\n  // PARTE 7b — GELADEIRA"
+
+--- REPLACEMENT CONTENT ---
+"  const ObPipeline = () => {\n    const activeCadence = cadences.find(c => c.status === 'Ativa');\n    let obStages = [];\n\n    if (activeCadence && activeCadence.cadence_steps && activeCadence.cadence_steps.length > 0) {\n      obStages.push({ id: 'fila', title: 'Fila', color: '#8b949e', filter: l => l.status === 'fila' && !l.paused });\n      const colors = ['#3b82f6', '#d29922', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#06b6d4'];\n      activeCadence.cadence_steps.forEach((step, idx) => {\n        const stepNum = step.step_number;\n        obStages.push({\n          id: `step_${stepNum}`,\n          title: `Passo ${stepNum} (${step.channel})`,\n          color: colors[idx % colors.length],\n          filter: l => l.status !== 'fila' && l.status !== 'objecao' && l.status !== 'resposto' && l.status !== 'convertido' && l.status !== 'descartado' && l.cadencia_step === stepNum && !l.paused\n        });\n      });\n      obStages.push({ id: 'objecao', title: 'Objeção', color: '#ef4444', filter: l => l.status === 'objecao' && !l.paused });\n      obStages.push({ id: 'resposto', title: 'Resposto / Convertido', color: '#10b981', filter: l => (l.status === 'resposto' || l.status === 'convertido') && !l.paused });\n      obStages.push({ id: 'pausado', title: 'Pausados / Congelados', color: '#6e7681', filter: l => l.paused || l.status === 'descartado' });\n    } else {\n      obStages = [\n        { id: 'fila', title: 'Fila', color: '#8b949e', filter: l => l.status === 'fila' },\n        { id: 'ativo', title: 'Em Execução', color: '#3b82f6', filter: l => l.status !== 'fila' && l.status !== 'objecao' && l.status !== 'resposto' && l.status !== 'convertido' && l.status !== 'descartado' && !l.paused },\n        { id: 'objecao', title: 'Objeção', color: '#ef4444', filter: l => l.status === 'objecao' },\n        { id: 'resposto', title: 'Respostos', color: '#10b981', filter: l => l.status === 'resposto' || l.status === 'convertido' },\n        { id: 'pausado', title: 'Pausados', color: '#6e7681', filter: l => l.paus
+<truncated 1747 bytes>
+
+=========================================
+STEP 1984: replace_file_content
+Instruction: undefined
+Description: "Update OutboundView component to include Pipeline Outbound tab and call subviews as functions"
+
+--- TARGET CONTENT ---
+"  const OutboundView = () => {\n    const tabs = [{\n      id: 'cadences',\n      label: 'Cadências',\n      icon: 'step'\n    }, {\n      id: 'geladeira',\n      label: 'Geladeira',\n      icon: 'ac_unit'\n    }, {\n      id: 'config',\n      label: 'Config Operacional',\n      icon: 'settings'\n    }];\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        flex: 1,\n        overflow: 'hidden'\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        gap: 4,\n        padding: '12px 24px 0',\n        borderBottom: '1px solid var(--border)'\n      }\n    }, tabs.map(t => /*#__PURE__*/React.createElement(\"button\", {\n      key: t.id,\n      onClick: () => setObSubView(t.id),\n      style: {\n        padding: '8px 16px',\n        border: 'none',\n        background: 'transparent',\n        cursor: 'pointer',\n        color: obSubView === t.id ? 'var(--gold)' : '#8b949e',\n        fontWeight: obSubView === t.id ? 700 : 400,\n        borderBottom: obSubView === t.id ? '2px solid var(--gold)' : '2px solid transparent',\n        fontSize: 13\n      }\n    }, /*#__PURE__*/React.createElement(\"span\", {\n      className: \"material-symbols-outlined\",\n      style: {\n        fontSize: 16,\n        verticalAlign: 'middle',\n        marginRight: 4\n      }\n    }, t.icon), t.label))), obSubView === 'cadences' && /*#__PURE__*/React.createElement(CadencesView, null), obSubView === 'geladeira' && /*#__PURE__*/React.createElement(GeladeiraView, null), obSubView === 'config' && /*#__PURE__*/React.createElement(\"div\", {"
+
+--- REPLACEMENT CONTENT ---
+undefined
+
+=========================================
+STEP 1988: replace_file_content
+Instruction: "Insert the new OutboundView function with Pipeline Outbound tab support"
+Description: "Insert new OutboundView component in index.html"
+
+--- TARGET CONTENT ---
+"\n      style: {"
+
+--- REPLACEMENT CONTENT ---
+"  const OutboundView = () => {\n    const tabs = [{\n      id: 'pipeline',\n      label: 'Pipeline Outbound',\n      icon: 'view_kanban'\n    }, {\n      id: 'cadences',\n      label: 'Cadências',\n      icon: 'step'\n    }, {\n      id: 'geladeira',\n      label: 'Geladeira',\n      icon: 'ac_unit'\n    }, {\n      id: 'config',\n      label: 'Config Operacional',\n      icon: 'settings'\n    }];\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        flex: 1,\n        overflow: 'hidden'\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        gap: 4,\n        padding: '12px 24px 0',\n        borderBottom: '1px solid var(--border)'\n      }\n    }, tabs.map(t => /*#__PURE__*/React.createElement(\"button\", {\n      key: t.id,\n      onClick: () => setObSubView(t.id),\n      style: {\n        padding: '8px 16px',\n        border: 'none',\n        background: 'transparent',\n        cursor: 'pointer',\n        color: obSubView === t.id ? 'var(--gold)' : '#8b949e',\n        fontWeight: obSubView === t.id ? 700 : 400,\n        borderBottom: obSubView === t.id ? '2px solid var(--gold)' : '2px solid transparent',\n        fontSize: 13\n      }\n    }, /*#__PURE__*/React.createElement(\"span\", {\n      className: \"material-symbols-outlined\",\n      style: {\n        fontSize: 16,\n        verticalAlign: 'middle',\n        marginRight: 4\n      }\n    }, t.icon), t.label))), obSubView === 'pipeline' && ObPipeline(), obSubView === 'cadences' && CadencesView(), obSubView === 'geladeira' && GeladeiraView(), obSubView === 'config' && /*#__PURE__*/React.createElement(\"div\", {\n      style: {"
+
+=========================================
+STEP 2190: replace_file_content
+Instruction: undefined
+Description: "Declarando a referência stateRef no topo do App para rastrear o estado atualizado e evitar stale closures nos componentes memoizados."
+
+--- TARGET CONTENT ---
+"  const sidebarRef = useRef(null);\n  const chatEndRef = useRef(null);\n\n  // ── Carregar dados do servidor ──"
+
+--- REPLACEMENT CONTENT ---
+"  const sidebarRef = useRef(null);\n  const chatEndRef = useRef(null);\n  const stateRef = useRef(null);\n\n  // ── Carregar dados do servidor ──"
+
+=========================================
+STEP 2198: replace_file_content
+Instruction: "Memoizar KanbanColumn com useMemo e usar stateRef.current para leitura do estado."
+Description: "Memoizando o componente KanbanColumn e redirecionando o acesso ao estado para stateRef.current para evitar unmounts e stale closures."
+
+--- TARGET CONTENT ---
+"  const KanbanColumn = ({\n    stage,\n    leadsList,\n    onDrop\n  }) => {\n    const [dragOver, setDragOver] = useState(false);\n    const handleDragOver = e => {\n      e.preventDefault();\n      setDragOver(true);\n    };\n    const handleDragLeave = () => setDragOver(false);\n    const handleDrop = e => {\n      e.preventDefault();\n      setDragOver(false);\n      const leadId = e.dataTransfer.getData('text/plain');\n      const lead = leads.find(l => l.id === leadId);\n      if (lead && lead.status !== stage.id) {\n        const info = getRotaInfo(lead);\n        const stageInfo = G5X_STAGES.find(s => s.id === stage.id);\n        const camposNeeded = [];\n        if (stage.id === 'viabilidade_tecnica') camposNeeded.push('Anexar Balanço Patrimonial');\n        if (stage.id === 'diagnostico_agendado') camposNeeded.push('Data/Hora do Diagnóstico');\n        if (stage.id === 'apresentacao_teto') camposNeeded.push('Anexar Apresentação em PDF');\n        if (stage.id === 'diligencia_matriz') {\n          camposNeeded.push('Anexar Proposta Comercial');\n          camposNeeded.push('Anexar Ficha Cadastral');\n        }\n        if (stage.id === 'credito_na_tela') camposNeeded.push('Anexar Contrato Assinado');\n        if (stage.id === 'perdido_arquivado') camposNeeded.push('Motivo do Descarte');\n        if (camposNeeded.length > 0) {\n          setModal({\n            type: 'stageMove',\n            data: {\n              lead,\n              newStage: stage.id,\n              stageInfo,\n              camposNeeded,\n              msg: `Para mover para ${stage.title}, informe:`\n            }\n          });\n        } else {\n          B.moveLeadStage(lead.id, stage.id).then(() => {\n            const updated = leads.map(l => l.id === lead.id ? {\n              ...l,\n              status: stage.id,\n              last_stage_change: new Date().toISOString()\n            } : l);\n            setLeads(updated);\n          });\n        }\n      }\n    };\n    return /*#__PURE__*/React.createElement(\"div\", {\
+<truncated 2355 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const KanbanColumn = useMemo(() => {\n    return ({\n      stage,\n      leadsList,\n      onDrop\n    }) => {\n      const { leads, setLeads, setModal, B, G5X_STAGES } = stateRef.current;\n      const [dragOver, setDragOver] = useState(false);\n      const handleDragOver = e => {\n        e.preventDefault();\n        setDragOver(true);\n      };\n      const handleDragLeave = () => setDragOver(false);\n      const handleDrop = e => {\n        e.preventDefault();\n        setDragOver(false);\n        const leadId = e.dataTransfer.getData('text/plain');\n        const lead = leads.find(l => l.id === leadId);\n        if (lead && lead.status !== stage.id) {\n          const info = getRotaInfo(lead);\n          const stageInfo = G5X_STAGES.find(s => s.id === stage.id);\n          const camposNeeded = [];\n          if (stage.id === 'viabilidade_tecnica') camposNeeded.push('Anexar Balanço Patrimonial');\n          if (stage.id === 'diagnostico_agendado') camposNeeded.push('Data/Hora do Diagnóstico');\n          if (stage.id === 'apresentacao_teto') camposNeeded.push('Anexar Apresentação em PDF');\n          if (stage.id === 'diligencia_matriz') {\n            camposNeeded.push('Anexar Proposta Comercial');\n            camposNeeded.push('Anexar Ficha Cadastral');\n          }\n          if (stage.id === 'credito_na_tela') camposNeeded.push('Anexar Contrato Assinado');\n          if (stage.id === 'perdido_arquivado') camposNeeded.push('Motivo do Descarte');\n          if (camposNeeded.length > 0) {\n            setModal({\n              type: 'stageMove',\n              data: {\n                lead,\n                newStage: stage.id,\n                stageInfo,\n                camposNeeded,\n                msg: `Para mover para ${stage.title}, informe:`\n              }\n            });\n          } else {\n            B.moveLeadStage(lead.id, stage.id).then(() => {\n              const updated = leads.map(l => l.id === lead.id ? {\n                ...l,\n                status: stage.id,\n                
+<truncated 2732 bytes>
+
+=========================================
+STEP 2204: replace_file_content
+Instruction: "Inserir o KanbanColumn memoizado no lugar das linhas residuais."
+Description: "Inserindo o componente KanbanColumn memoizado com referências estáveis de estado para evitar desmontagem ao arrastar leads."
+
+--- TARGET CONTENT ---
+"      }\n    }, \"Vazio\")));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"  const KanbanColumn = useMemo(() => {\n    return ({\n      stage,\n      leadsList,\n      onDrop\n    }) => {\n      const { leads, setLeads, setModal, B, G5X_STAGES } = stateRef.current;\n      const [dragOver, setDragOver] = useState(false);\n      const handleDragOver = e => {\n        e.preventDefault();\n        setDragOver(true);\n      };\n      const handleDragLeave = () => setDragOver(false);\n      const handleDrop = e => {\n        e.preventDefault();\n        setDragOver(false);\n        const leadId = e.dataTransfer.getData('text/plain');\n        const lead = leads.find(l => l.id === leadId);\n        if (lead && lead.status !== stage.id) {\n          const info = getRotaInfo(lead);\n          const stageInfo = G5X_STAGES.find(s => s.id === stage.id);\n          const camposNeeded = [];\n          if (stage.id === 'viabilidade_tecnica') camposNeeded.push('Anexar Balanço Patrimonial');\n          if (stage.id === 'diagnostico_agendado') camposNeeded.push('Data da Call de 15min');\n          if (stage.id === 'apresentacao_teto') camposNeeded.push('Teto de até 5x faturamento');\n          if (stage.id === 'diligencia_matriz') camposNeeded.push('Montar Pasta Técnica');\n          if (stage.id === 'credito_na_tela') camposNeeded.push('Honorários no Êxito');\n          const msg = camposNeeded.length ? `Campos para ${stageInfo.title}: ${camposNeeded.join(', ')}` : '';\n          if (camposNeeded.length > 0) {\n            setModal({\n              type: 'stageMove',\n              data: {\n                lead,\n                newStage: stage.id,\n                stageInfo,\n                camposNeeded,\n                msg\n              }\n            });\n          } else {\n            B.moveLeadStage(lead.id, stage.id).then(() => {\n              const updated = leads.map(l => l.id === lead.id ? {\n                ...l,\n                status: stage.id,\n                last_stage_change: new Date().toISOString()\n              } : l);\n              setLeads(updated);\n            });\n 
+<truncated 2102 bytes>
+
+=========================================
+STEP 2214: replace_file_content
+Instruction: "Memoizar CadenceEditor usando useMemo."
+Description: "Memoizando o editor de cadências (CadenceEditor) para garantir estabilidade e evitar perdas de progresso em re-renders."
+
+--- TARGET CONTENT ---
+"  const CadenceEditor = ({\n    cadence,\n    onSave,\n    onCancel\n  }) => {\n    const [name, setName] = useState(cadence?.name || '');\n    const [desc, setDesc] = useState(cadence?.description || '');\n    const [steps, setSteps] = useState(cadence?.cadence_steps || [{\n      step_number: 1,\n      channel: 'whatsapp',\n      timing_days: 0,\n      scheduled_time: '09:00',\n      message_template: '',\n      label: 'Passo 1'\n    }]);\n    const addStep = () => setSteps([...steps, {\n      step_number: steps.length + 1,\n      channel: 'whatsapp',\n      timing_days: 1,\n      scheduled_time: '09:00',\n      message_template: '',\n      label: `Passo ${steps.length + 1}`\n    }]);\n    const removeStep = i => setSteps(steps.filter((_, idx) => idx !== i));\n    const updateStep = (i, key, val) => {\n      const n = [...steps];\n      n[i] = {\n        ...n[i],\n        [key]: val\n      };\n      setSteps(n);\n    };\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        padding: 24,\n        maxWidth: 700\n      }\n    }, /*#__PURE__*/React.createElement(\"h3\", {\n      style: {\n        color: 'white',\n        margin: '0 0 16px'\n      }\n    }, cadence?.id ? 'Editar' : 'Nova', \" Cad\\xEAncia\"), /*#__PURE__*/React.createElement(\"input\", {\n      value: name,\n      onChange: e => setName(e.target.value),\n      placeholder: \"Nome da cad\\xEAncia\",\n      style: {\n        marginBottom: 8\n      }\n    }), /*#__PURE__*/React.createElement(\"input\", {\n      value: desc,\n      onChange: e => setDesc(e.target.value),\n      placeholder: \"Descri\\xE7\\xE3o\",\n      style: {\n        marginBottom: 16\n      }\n    }), steps.map((s, i) => /*#__PURE__*/React.createElement(\"div\", {\n      key: i,\n      style: {\n        background: 'rgba(255,255,255,.03)',\n        border: '1px solid var(--border)',\n        borderRadius: 10,\n        padding: 12,\n        marginBottom: 8\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\
+<truncated 3281 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const CadenceEditor = useMemo(() => {\n    return ({\n      cadence,\n      onSave,\n      onCancel\n    }) => {\n      const [name, setName] = useState(cadence?.name || '');\n      const [desc, setDesc] = useState(cadence?.description || '');\n      const [steps, setSteps] = useState(cadence?.cadence_steps || [{\n        step_number: 1,\n        channel: 'whatsapp',\n        timing_days: 0,\n        scheduled_time: '09:00',\n        message_template: '',\n        label: 'Passo 1'\n      }]);\n      const addStep = () => setSteps([...steps, {\n        step_number: steps.length + 1,\n        channel: 'whatsapp',\n        timing_days: 1,\n        scheduled_time: '09:00',\n        message_template: '',\n        label: `Passo ${steps.length + 1}`\n      }]);\n      const removeStep = i => setSteps(steps.filter((_, idx) => idx !== i));\n      const updateStep = (i, key, val) => {\n        const n = [...steps];\n        n[i] = {\n          ...n[i],\n          [key]: val\n        };\n        setSteps(n);\n      };\n      return /*#__PURE__*/React.createElement(\"div\", {\n        style: {\n          padding: 24,\n          maxWidth: 700\n        }\n      }, /*#__PURE__*/React.createElement(\"h3\", {\n        style: {\n          color: 'white',\n          margin: '0 0 16px'\n        }\n      }, cadence?.id ? 'Editar' : 'Nova', \" Cad\\xEAncia\"), /*#__PURE__*/React.createElement(\"input\", {\n        value: name,\n        onChange: e => setName(e.target.value),\n        placeholder: \"Nome da cad\\xEAncia\",\n        style: {\n          marginBottom: 8\n        }\n      }), /*#__PURE__*/React.createElement(\"input\", {\n        value: desc,\n        onChange: e => setDesc(e.target.value),\n        placeholder: \"Descri\\xE7\\xE3o\",\n        style: {\n          marginBottom: 16\n        }\n      }), steps.map((s, i) => /*#__PURE__*/React.createElement(\"div\", {\n        key: i,\n        style: {\n          background: 'rgba(255,255,255,.03)',\n          border: '1px solid var(--border)',\n          borderRadius: 10,\
+<truncated 3666 bytes>
+
+=========================================
+STEP 2218: replace_file_content
+Instruction: "Fechar corretamente o useMemo do CadenceEditor."
+Description: "Limpando chaves sobressalentes e fechando a declaração useMemo para o CadenceEditor."
+
+--- TARGET CONTENT ---
+"    };\n      }\n    }, \"Salvar\")));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    };\n  }, []);"
+
+=========================================
+STEP 2226: replace_file_content
+Instruction: "Memoizar NewLeadModal usando useMemo e stateRef.current."
+Description: "Memoizando NewLeadModal para evitar a desmontagem do DOM e perda de foco/dados digitados no formulário de criação de lead."
+
+--- TARGET CONTENT ---
+"  const NewLeadModal = () => {\n    const [f, setF] = useState({\n      name: '',\n      company: '',\n      phone: '',\n      email: '',\n      linkedin_url: '',\n      value: '',\n      main_pain: '',\n      job_title: '',\n      partner_id: '',\n      source: 'manual',\n      indicador_origem: ''\n    });\n    const save = async () => {\n      if (!f.name.trim()) {\n        alert('Nome é obrigatório');\n        return;\n      }\n      const leadData = {\n        ...f,\n        value: parseMoney(f.value)\n      };\n      if (f.source === ORIGEM_INDICACAO && f.indicador_origem.trim()) {\n        leadData.indicacao_origem = {\n          indicador: f.indicador_origem,\n          data: new Date().toISOString()\n        };\n      }\n      delete leadData.indicador_origem;\n      await saveLead(leadData);\n      setModal({\n        type: null\n      });\n    };\n    return /*#__PURE__*/React.createElement(Modal, {\n      onClose: () => setModal({\n        type: null\n      })\n    }, /*#__PURE__*/React.createElement(\"h3\", {\n      style: {\n        color: 'white',\n        margin: '0 0 16px'\n      }\n    }, \"Novo Lead \\u2014 Pipeline \\xDAnico G5X\"), /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        gap: 10\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        gap: 8\n      }\n    }, /*#__PURE__*/React.createElement(\"select\", {\n      value: f.source,\n      onChange: e => setF({\n        ...f,\n        source: e.target.value\n      }),\n      style: {\n        flex: 1\n      }\n    }, /*#__PURE__*/React.createElement(\"option\", {\n      value: \"manual\"\n    }, \"Entrada Manual (Fria)\"), /*#__PURE__*/React.createElement(\"option\", {\n      value: ORIGEM_INDICACAO\n    }, \"Indica\\xE7\\xE3o (Quente)\")), /*#__PURE__*/React.createElement(\"button\", {\n      onClick: () => setModal({\n        type: 'outputProtocol'\n      }),\n      style: {\n        background: 'rgba
+<truncated 3081 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const NewLeadModal = useMemo(() => {\n    return () => {\n      const { partners, setModal, loadData, leads, ORIGEM_INDICACAO, B, saveLead } = stateRef.current;\n      const [f, setF] = useState({\n        name: '',\n        company: '',\n        phone: '',\n        email: '',\n        linkedin_url: '',\n        value: '',\n        main_pain: '',\n        job_title: '',\n        partner_id: '',\n        source: 'manual',\n        indicador_origem: ''\n      });\n      const save = async () => {\n        if (!f.name.trim()) {\n          alert('Nome é obrigatório');\n          return;\n        }\n        const leadData = {\n          ...f,\n          value: parseMoney(f.value)\n        };\n        if (f.source === ORIGEM_INDICACAO && f.indicador_origem.trim()) {\n          leadData.indicacao_origem = {\n            indicador: f.indicador_origem,\n            data: new Date().toISOString()\n          };\n        }\n        delete leadData.indicador_origem;\n        await saveLead(leadData);\n        setModal({\n          type: null\n        });\n      };\n      return /*#__PURE__*/React.createElement(Modal, {\n        onClose: () => setModal({\n          type: null\n        })\n      }, /*#__PURE__*/React.createElement(\"h3\", {\n        style: {\n          color: 'white',\n          margin: '0 0 16px'\n        }\n      }, \"Novo Lead \\u2014 Pipeline \\xDAnico G5X\"), /*#__PURE__*/React.createElement(\"div\", {\n        style: {\n          display: 'flex',\n          flexDirection: 'column',\n          gap: 10\n        }\n      }, /*#__PURE__*/React.createElement(\"div\", {\n        style: {\n          display: 'flex',\n          gap: 8\n        }\n      }, /*#__PURE__*/React.createElement(\"select\", {\n        value: f.source,\n        onChange: e => setF({\n          ...f,\n          source: e.target.value\n        }),\n        style: {\n          flex: 1\n        }\n      }, /*#__PURE__*/React.createElement(\"option\", {\n        value: \"manual\"\n      }, \"Entrada Manual (Fria)\"), /*#__PURE__*/React.cr
+<truncated 3562 bytes>
+
+=========================================
+STEP 2247: replace_file_content
+Instruction: "Iniciar o useMemo em NewLeadModal."
+Description: "Iniciando o bloco useMemo em NewLeadModal para evitar a desmontagem do DOM."
+
+--- TARGET CONTENT ---
+"  const NewLeadModal = () => {"
+
+--- REPLACEMENT CONTENT ---
+"  const NewLeadModal = useMemo(() => {\n    return () => {\n      const { partners, setModal, loadData, leads, ORIGEM_INDICACAO, B, saveLead } = stateRef.current;"
+
+=========================================
+STEP 2251: replace_file_content
+Instruction: "Fechar o useMemo de NewLeadModal."
+Description: "Fechando o bloco useMemo em NewLeadModal."
+
+--- TARGET CONTENT ---
+"    }, f.source === ORIGEM_INDICACAO ? '🔥 Criar Lead (Indicação)' : `❄️ Criar Lead (${f.source})`)));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    }, f.source === ORIGEM_INDICACAO ? '🔥 Criar Lead (Indicação)' : `❄️ Criar Lead (${f.source})`)));\n    };\n  }, []);"
+
+=========================================
+STEP 2257: replace_file_content
+Instruction: "Iniciar o useMemo em LeadDetailModal."
+Description: "Iniciando o bloco useMemo em LeadDetailModal com referências estáveis de estado para evitar desmontagem ao digitar ou fazer polling."
+
+--- TARGET CONTENT ---
+"  const LeadDetailModal = ({\n    lead\n  }) => {"
+
+--- REPLACEMENT CONTENT ---
+"  const LeadDetailModal = useMemo(() => {\n    return ({\n      lead\n    }) => {\n      const { partners, actions, saveTask, saveLead, deleteLead, G5X_STAGES, getRotaInfo, getDaysInStage, daysBetween, setModal, openWA, B, loadData } = stateRef.current;"
+
+=========================================
+STEP 2261: replace_file_content
+Instruction: "Fechar o useMemo de LeadDetailModal."
+Description: "Fechando o bloco useMemo em LeadDetailModal."
+
+--- TARGET CONTENT ---
+"    }, \"\\u2190 Atual\")))));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    }, \"\\u2190 Atual\")))));\n    };\n  }, []);"
+
+=========================================
+STEP 2267: replace_file_content
+Instruction: "Iniciar o useMemo em PartnerModal."
+Description: "Iniciando o bloco useMemo em PartnerModal para manter a estabilidade do foco e dados do formulário de parceiros."
+
+--- TARGET CONTENT ---
+"  const PartnerModal = ({\n    partner\n  }) => {"
+
+--- REPLACEMENT CONTENT ---
+"  const PartnerModal = useMemo(() => {\n    return ({\n      partner\n    }) => {\n      const { setModal, savePartner, loadData } = stateRef.current;"
+
+=========================================
+STEP 2271: replace_file_content
+Instruction: "Fechar o useMemo de PartnerModal."
+Description: "Fechando o bloco useMemo em PartnerModal."
+
+--- TARGET CONTENT ---
+"    }, \"Salvar\"))));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    }, \"Salvar\"))));\n    };\n  }, []);"
+
+=========================================
+STEP 2277: replace_file_content
+Instruction: "Iniciar o useMemo em ObDetailModal."
+Description: "Iniciando o bloco useMemo em ObDetailModal para garantir estabilidade e evitar perdas de digitação/foco."
+
+--- TARGET CONTENT ---
+"  const ObDetailModal = ({\n    ol\n  }) => {"
+
+--- REPLACEMENT CONTENT ---
+"  const ObDetailModal = useMemo(() => {\n    return ({\n      ol\n    }) => {\n      const { B, setModal, loadData } = stateRef.current;"
+
+=========================================
+STEP 2281: replace_file_content
+Instruction: "Fechar o useMemo de ObDetailModal."
+Description: "Fechando o bloco useMemo em ObDetailModal."
+
+--- TARGET CONTENT ---
+"    }, \"Salvar\"));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    }, \"Salvar\"));\n    };\n  }, []);"
+
+=========================================
+STEP 2291: replace_file_content
+Instruction: "Iniciar o useMemo em StageMoveModal."
+Description: "Iniciando o bloco useMemo em StageMoveModal para manter a estabilidade do formulário de transição de etapas."
+
+--- TARGET CONTENT ---
+"  const StageMoveModal = ({\n    data: {\n      lead,\n      newStage,\n      stageInfo,\n      camposNeeded,\n      msg\n    }\n  }) => {"
+
+--- REPLACEMENT CONTENT ---
+"  const StageMoveModal = useMemo(() => {\n    return ({\n      data: {\n        lead,\n        newStage,\n        stageInfo,\n        camposNeeded,\n        msg\n      }\n    }) => {\n      const { B, setModal, loadData, leads, setLeads } = stateRef.current;"
+
+=========================================
+STEP 2295: replace_file_content
+Instruction: "Fechar o useMemo de StageMoveModal."
+Description: "Fechando o bloco useMemo em StageMoveModal."
+
+--- TARGET CONTENT ---
+"    }, \"\\u2705 Mover para \", stageInfo.title)));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    }, \"\\u2705 Mover para \", stageInfo.title)));\n    };\n  }, []);"
+
+=========================================
+STEP 2307: replace_file_content
+Instruction: "Iniciar o useMemo em IndicacoesView."
+Description: "Iniciando o bloco useMemo em IndicacoesView com referências estáveis de estado para evitar desmontagem na troca de subviews."
+
+--- TARGET CONTENT ---
+"  const IndicacoesView = () => {"
+
+--- REPLACEMENT CONTENT ---
+"  const IndicacoesView = useMemo(() => {\n    return () => {\n      const { partners, leads, setModal, getRotaInfo, B, loadData, isIndicacao, formatKMB, openWA } = stateRef.current;"
+
+=========================================
+STEP 2311: replace_file_content
+Instruction: "Fechar o useMemo de IndicacoesView."
+Description: "Fechando o bloco useMemo em IndicacoesView."
+
+--- TARGET CONTENT ---
+"    }, \"[Nome do Lead], sou o [Seu Nome] da G5X. Estava em contato com o [Nome do Indicador] e ele mencionou o ritmo das opera\\xE7\\xF5es da [Fantasia]. Ele sugeriu que fal\\xE1ssemos diretamente sobre como estamos acelerando construtoras do seu porte. Operamos o GERIC FAST, uma esteira t\\xE9cnica direta na Matriz da Caixa que libera limites de at\\xE9 5x o seu faturamento anual em at\\xE9 28 dias, sem o engessamento das ag\\xEAncias de varejo. Nosso modelo \\xE9 risco zero: honor\\xE1rios 100% no \\xEAxito, pagos apenas com o cr\\xE9dito liberado na tela do seu gerente. Voc\\xEA pode validar a libera\\xE7\\xE3o em qualquer ag\\xEAncia antes do nosso acerto. Como o [Nome do Indicador] fez a ponte, faz sentido alinharmos 15 minutos para projetarmos seu teto de alavancagem?\"))));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    }, \"[Nome do Lead], sou o [Seu Nome] da G5X. Estava em contato com o [Nome do Indicador] e ele mencionou o ritmo das opera\\xE7\\xF5es da [Fantasia]. Ele sugeriu que fal\\xE1ssemos diretamente sobre como estamos acelerando construtoras do seu porte. Operamos o GERIC FAST, uma esteira t\\xE9cnica direta na Matriz da Caixa que libera limites de at\\xE9 5x o seu faturamento anual em at\\xE9 28 dias, sem o engessamento das ag\\xEAncias de varejo. Nosso modelo \\xE9 risco zero: honor\\xE1rios 100% no \\xEAxito, pagos apenas com o cr\\xE9dito liberado na tela do seu gerente. Voc\\xEA pode validar a libera\\xE7\\xE3o em qualquer ag\\xEAncia antes do nosso acerto. Como o [Nome do Indicador] fez a ponte, faz sentido alinharmos 15 minutos para projetarmos seu teto de alavancagem?\"))));\n    };\n  }, []);"
+
+=========================================
+STEP 2321: replace_file_content
+Instruction: "Iniciar o useMemo em KnowledgeView."
+Description: "Iniciando o bloco useMemo em KnowledgeView para manter a estabilidade do foco e do estado de visualização de documentos."
+
+--- TARGET CONTENT ---
+"  const KnowledgeView = () => {"
+
+--- REPLACEMENT CONTENT ---
+"  const KnowledgeView = useMemo(() => {\n    return () => {\n      const { knowledge, loadData, B, knowledgeSubView, setKnowledgeSubView, uploadKnowledgeFile } = stateRef.current;"
+
+=========================================
+STEP 2325: replace_file_content
+Instruction: "Fechar o useMemo de KnowledgeView."
+Description: "Fechando o bloco useMemo em KnowledgeView."
+
+--- TARGET CONTENT ---
+"    })))));\n  };"
+
+--- REPLACEMENT CONTENT ---
+"    })))));\n    };\n  }, []);"
+
+=========================================
+STEP 2331: replace_file_content
+Instruction: "Remover o useEffect de dentro do ChatView."
+Description: "Removendo o useEffect condicional de rolagem do chat de dentro da view para evitar violações de regras de hooks em React."
+
+--- TARGET CONTENT ---
+"  const ChatView = () => {\n    useEffect(() => {\n      if (chatEndRef.current) chatEndRef.current.scrollIntoView({\n        behavior: 'smooth'\n      });\n    }, [chatHistory]);\n    return /*#__PURE__*/React.createElement(\"div\", {"
+
+--- REPLACEMENT CONTENT ---
+"  const ChatView = () => {\n    return /*#__PURE__*/React.createElement(\"div\", {"
+
+=========================================
+STEP 2337: replace_file_content
+Instruction: "Remover o useEffect de dentro do EngineDashboard."
+Description: "Removendo o useEffect condicional do status do motor de dentro de EngineDashboard para evitar violações de regras de hooks em React."
+
+--- TARGET CONTENT ---
+"  const EngineDashboard = () => {\n    useEffect(() => {\n      fetchEngineStatus();\n      const iv = setInterval(fetchEngineStatus, 10000);\n      return () => clearInterval(iv);\n    }, []);\n    const isOn = engineStatus?.running;"
+
+--- REPLACEMENT CONTENT ---
+"  const EngineDashboard = () => {\n    const isOn = engineStatus?.running;"
+
+=========================================
+STEP 2341: replace_file_content
+Instruction: "Adicionar hooks useEffect para chat e engine status no topo do App."
+Description: "Adicionando os hooks useEffect de rolagem do chat e polling do motor de forma incondicional no escopo superior do App."
+
+--- TARGET CONTENT ---
+"  // Auto-refresh a cada 30s\n  useEffect(() => {\n    const iv = setInterval(loadData, 30000);\n    return () => clearInterval(iv);\n  }, [loadData]);"
+
+--- REPLACEMENT CONTENT ---
+"  // Auto-refresh a cada 30s\n  useEffect(() => {\n    const iv = setInterval(loadData, 30000);\n    return () => clearInterval(iv);\n  }, [loadData]);\n\n  // Rolagem automática do chat\n  useEffect(() => {\n    if (view === 'chat' && chatEndRef.current) {\n      chatEndRef.current.scrollIntoView({\n        behavior: 'smooth'\n      });\n    }\n  }, [chatHistory, view]);\n\n  // Polling de status do motor quando ativo na visualização do agente\n  useEffect(() => {\n    if (view === 'agent' && agentSubView === 'engine') {\n      fetchEngineStatus();\n      const iv = setInterval(fetchEngineStatus, 10000);\n      return () => clearInterval(iv);\n    }\n  }, [view, agentSubView]);"
+
+=========================================
+STEP 2353: replace_file_content
+Instruction: "Substituir ObCard e ObPipeline para suportar drag-and-drop no outbound."
+Description: "Implementando suporte a drag-and-drop no Kanban de Outbound (ObPipeline): tornando cartões arrastáveis e colunas receptivas ao drop para atualizar o status do lead na cadência."
+
+--- TARGET CONTENT ---
+"  const ObCard = ({\n    ol\n  }) => /*#__PURE__*/React.createElement(\"div\", {\n    className: \"ob-card\",\n    onClick: () => setModal({\n      type: 'obDetail',\n      data: ol\n    }),\n    style: {\n      background: 'var(--graphite)',\n      borderRadius: 8,\n      padding: 10,\n      marginBottom: 5,\n      borderLeftColor: OB_STAGES.find(s => s.id === ol.status)?.color || 'var(--border)'\n    }\n  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      justifyContent: 'space-between',\n      alignItems: 'center'\n    }\n  }, /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      fontWeight: 600,\n      fontSize: 12.5,\n      color: 'var(--text-primary)'\n    }\n  }, ol.name), ol.paused && /*#__PURE__*/React.createElement(\"span\", {\n    style: {\n      fontSize: 9,\n      background: 'rgba(168,85,247,.15)',\n      color: 'var(--zombie)',\n      padding: '1px 5px',\n      borderRadius: 4\n    }\n  }, \"\\u23F8\")), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      fontSize: 10.5,\n      color: 'var(--text-secondary)',\n      marginTop: 1\n    }\n  }, ol.company || '—'), /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      gap: 6,\n      marginTop: 4,\n      fontSize: 10,\n      color: 'var(--text-muted)'\n    }\n  }, /*#__PURE__*/React.createElement(\"span\", null, \"Passo \", ol.cadencia_step || '—'), /*#__PURE__*/React.createElement(\"span\", null, \"\\u2022\"), /*#__PURE__*/React.createElement(\"span\", null, ol.channel || 'whatsapp'), ol.last_contact && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(\"span\", null, \"\\u2022\"), /*#__PURE__*/React.createElement(\"span\", null, fmtDate(ol.last_contact)))));\n  const ObPipeline = () => {\n    const activeCadence = cadences.find(c => c.status === 'Ativa');\n    let obStages = [];\n\n    if (activeCadence && activeCadence.cadence_steps && activeCadence.cadence_steps.length > 0) {\n      obStages.push({ id: 'fila'
+<truncated 3505 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const ObCard = ({\n    ol\n  }) => {\n    const { setModal, OB_STAGES, fmtDate } = stateRef.current;\n    const handleDragStart = e => {\n      e.dataTransfer.setData('text/plain', ol.id);\n    };\n    return /*#__PURE__*/React.createElement(\"div\", {\n      className: \"ob-card\",\n      draggable: true,\n      onDragStart: handleDragStart,\n      onClick: () => setModal({\n        type: 'obDetail',\n        data: ol\n      }),\n      style: {\n        background: 'var(--graphite)',\n        borderRadius: 8,\n        padding: 10,\n        marginBottom: 5,\n        borderLeftWidth: '3px',\n        borderLeftStyle: 'solid',\n        borderLeftColor: OB_STAGES.find(s => s.id === ol.status)?.color || 'var(--border)',\n        cursor: 'grab'\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        justifyContent: 'space-between',\n        alignItems: 'center'\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        fontWeight: 600,\n        fontSize: 12.5,\n        color: 'var(--text-primary)'\n      }\n    }, ol.name), ol.paused && /*#__PURE__*/React.createElement(\"span\", {\n      style: {\n        fontSize: 9,\n        background: 'rgba(168,85,247,.15)',\n        color: 'var(--zombie)',\n        padding: '1px 5px',\n        borderRadius: 4\n      }\n    }, \"\\u23F8\")), /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        fontSize: 10.5,\n        color: 'var(--text-secondary)',\n        marginTop: 1\n      }\n    }, ol.company || '—'), /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        gap: 6,\n        marginTop: 4,\n        fontSize: 10,\n        color: 'var(--text-muted)'\n      }\n    }, /*#__PURE__*/React.createElement(\"span\", null, \"Passo \", ol.cadencia_step || '—'), /*#__PURE__*/React.createElement(\"span\", null, \"\\u2022\"), /*#__PURE__*/React.createElement(\"span\", null, ol.channel || 'whatsapp'), ol.last_contact && /*#__PURE__*/React.createElement
+<truncated 5091 bytes>
+
+=========================================
+STEP 2473: replace_file_content
+Instruction: "Declare stateRef = useRef(null) after chatInputRef."
+Description: "Declaring stateRef at the top of the App component to store state references and prevent stale closures."
+
+--- TARGET CONTENT ---
+"  const [chatHistory, setChatHistory] = useState([]);\n  const chatInputRef = useRef(null);\n  const [activityLog, setActivityLog] = useState([]);"
+
+--- REPLACEMENT CONTENT ---
+"  const [chatHistory, setChatHistory] = useState([]);\n  const chatInputRef = useRef(null);\n  const stateRef = useRef(null);\n  const [activityLog, setActivityLog] = useState([]);"
+
+=========================================
+STEP 2477: replace_file_content
+Instruction: "Add handleObLeadDrop function after moveLead."
+Description: "Add handleObLeadDrop function to handle outbound lead drag-and-drop operations, updating lead statuses and paused states dynamically."
+
+--- TARGET CONTENT ---
+"  const moveLead = async (id, status) => {\n    await B.moveLeadStage(id, status);\n    await loadData();\n  };"
+
+--- REPLACEMENT CONTENT ---
+"  const moveLead = async (id, status) => {\n    await B.moveLeadStage(id, status);\n    await loadData();\n  };\n  const handleObLeadDrop = async (leadId, targetStageId) => {\n    try {\n      const lead = obLeads.find(l => l.id === leadId);\n      if (!lead) return;\n      let updateData = {};\n      if (targetStageId === 'fila') {\n        updateData = { status: 'fila', paused: false };\n      } else if (targetStageId.startsWith('step_')) {\n        const stepNum = parseInt(targetStageId.split('_')[1], 10);\n        updateData = { status: 'execucao', cadencia_step: stepNum, paused: false };\n      } else if (targetStageId === 'objecao') {\n        updateData = { status: 'objecao', paused: false };\n      } else if (targetStageId === 'resposto') {\n        await B.replyObLead(leadId);\n        await loadData();\n        return;\n      } else if (targetStageId === 'pausado') {\n        updateData = { paused: true };\n      }\n      await B.updateObLead(leadId, updateData);\n      await loadData();\n    } catch (err) {\n      console.error('Erro ao mover lead outbound:', err);\n    }\n  };"
+
+=========================================
+STEP 2483: replace_file_content
+Instruction: "Wrap KanbanColumn in useMemo."
+Description: "Wrap KanbanColumn in useMemo to prevent unmounting and input focus loss, reading active properties from stateRef.current."
+
+--- TARGET CONTENT ---
+"  const KanbanColumn = ({\n    stage,\n    leadsList,\n    onDrop\n  }) => {\n    const [dragOver, setDragOver] = useState(false);\n    const handleDragOver = e => {\n      e.preventDefault();\n      setDragOver(true);\n    };\n    const handleDragLeave = () => setDragOver(false);\n    const handleDrop = e => {\n      e.preventDefault();\n      setDragOver(false);\n      const leadId = e.dataTransfer.getData('text/plain');\n      const lead = leads.find(l => l.id === leadId);\n      if (lead && lead.status !== stage.id) {\n        const info = getRotaInfo(lead);\n        const stageInfo = G5X_STAGES.find(s => s.id === stage.id);\n        const camposNeeded = [];\n        if (stage.id === 'viabilidade_tecnica') camposNeeded.push('Anexar Balanço Patrimonial');\n        if (stage.id === 'diagnostico_agendado') camposNeeded.push('Data da Call de 15min');\n        if (stage.id === 'apresentacao_teto') camposNeeded.push('Teto de até 5x faturamento');\n        if (stage.id === 'diligencia_matriz') camposNeeded.push('Montar Pasta Técnica');\n        if (stage.id === 'credito_na_tela') camposNeeded.push('Honorários no Êxito');\n        const msg = camposNeeded.length ? `Campos para ${stageInfo.title}: ${camposNeeded.join(', ')}` : '';\n        setModal({\n          type: 'stageMove',\n          data: {\n            lead,\n            newStage: stage.id,\n            stageInfo,\n            camposNeeded,\n            msg\n          }\n        });\n      }\n    };\n    return /*#__PURE__*/React.createElement(\"div\", {\n      className: `kanban-column ${dragOver ? 'drop-target' : ''}`,\n      onDragOver: handleDragOver,\n      onDragLeave: handleDragLeave,\n      onDrop: handleDrop,\n      style: {\n        minWidth: 260,\n        maxWidth: 300,\n        flex: 1,\n        padding: 10,\n        transition: 'all .15s'\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        alignItems: 'center',\n        gap: 6,\n        marginBottom: 10,\n        padding: '0 4px'\n
+<truncated 1363 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const KanbanColumn = useMemo(() => {\n    return ({\n      stage,\n      leadsList,\n      onDrop\n    }) => {\n      const { leads, getRotaInfo, setModal } = stateRef.current;\n      const [dragOver, setDragOver] = useState(false);\n      const handleDragOver = e => {\n        e.preventDefault();\n        setDragOver(true);\n      };\n      const handleDragLeave = () => setDragOver(false);\n      const handleDrop = e => {\n        e.preventDefault();\n        setDragOver(false);\n        const leadId = e.dataTransfer.getData('text/plain');\n        const lead = leads.find(l => l.id === leadId);\n        if (lead && lead.status !== stage.id) {\n          const info = getRotaInfo(lead);\n          const stageInfo = G5X_STAGES.find(s => s.id === stage.id);\n          const camposNeeded = [];\n          if (stage.id === 'viabilidade_tecnica') camposNeeded.push('Anexar Balanço Patrimonial');\n          if (stage.id === 'diagnostico_agendado') camposNeeded.push('Data da Call de 15min');\n          if (stage.id === 'apresentacao_teto') camposNeeded.push('Teto de até 5x faturamento');\n          if (stage.id === 'diligencia_matriz') camposNeeded.push('Montar Pasta Técnica');\n          if (stage.id === 'credito_na_tela') camposNeeded.push('Honorários no Êxito');\n          const msg = camposNeeded.length ? `Campos para ${stageInfo.title}: ${camposNeeded.join(', ')}` : '';\n          setModal({\n            type: 'stageMove',\n            data: {\n              lead,\n              newStage: stage.id,\n              stageInfo,\n              camposNeeded,\n              msg\n            }\n          });\n        }\n      };\n      return /*#__PURE__*/React.createElement(\"div\", {\n        className: `kanban-column ${dragOver ? 'drop-target' : ''}`,\n        onDragOver: handleDragOver,\n        onDragLeave: handleDragLeave,\n        onDrop: handleDrop,\n        style: {\n          minWidth: 260,\n          maxWidth: 300,\n          flex: 1,\n          padding: 10,\n          transition: 'all .15s'\n        }\n   
+<truncated 1674 bytes>
+
+=========================================
+STEP 2491: replace_file_content
+Instruction: "Wrap CadenceEditor in useMemo."
+Description: "Wrap CadenceEditor in useMemo to maintain its state and focus, avoiding unnecessary unmounts."
+
+--- TARGET CONTENT ---
+"  const CadenceEditor = ({\n    cadence,\n    onSave,\n    onCancel\n  }) => {\n    const [name, setName] = useState(cadence?.name || '');\n    const [desc, setDesc] = useState(cadence?.description || '');\n    const [steps, setSteps] = useState(cadence?.cadence_steps || [{\n      step_number: 1,\n      channel: 'whatsapp',\n      timing_days: 0,\n      scheduled_time: '09:00',\n      message_template: '',\n      label: 'Passo 1'\n    }]);\n    const addStep = () => setSteps([...steps, {\n      step_number: steps.length + 1,\n      channel: 'whatsapp',\n      timing_days: 1,\n      scheduled_time: '09:00',\n      message_template: '',\n      label: `Passo ${steps.length + 1}`\n    }]);\n    const removeStep = i => setSteps(steps.filter((_, idx) => idx !== i));\n    const updateStep = (i, key, val) => {\n      const n = [...steps];\n      n[i] = {\n        ...n[i],\n        [key]: val\n      };\n      setSteps(n);\n    };\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        padding: 24,\n        maxWidth: 700\n      }\n    }, /*#__PURE__*/React.createElement(\"h3\", {\n      style: {\n        color: 'white',\n        margin: '0 0 16px'\n      }\n    }, cadence?.id ? 'Editar' : 'Nova', \" Cad\\xEAncia\"), /*#__PURE__*/React.createElement(\"input\", {\n      value: name,\n      onChange: e => setName(e.target.value),\n      placeholder: \"Nome da cad\\xEAncia\",\n      style: {\n        marginBottom: 8\n      }\n    }), /*#__PURE__*/React.createElement(\"input\", {\n      value: desc,\n      onChange: e => setDesc(e.target.value),\n      placeholder: \"Descri\\xE7\\xE3o\",\n      style: {\n        marginBottom: 16\n      }\n    }), steps.map((s, i) => /*#__PURE__*/React.createElement(\"div\", {\n      key: i,\n      style: {\n        background: 'rgba(255,255,255,.03)',\n        border: '1px solid var(--border)',\n        borderRadius: 10,\n        padding: 12,\n        marginBottom: 8\n      }\n    }, /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\
+<truncated 3297 bytes>
+
+--- REPLACEMENT CONTENT ---
+"  const CadenceEditor = useMemo(() => {\n    return ({\n      cadence,\n      onSave,\n      onCancel\n    }) => {\n      const [name, setName] = useState(cadence?.name || '');\n      const [desc, setDesc] = useState(cadence?.description || '');\n      const [steps, setSteps] = useState(cadence?.cadence_steps || [{\n        step_number: 1,\n        channel: 'whatsapp',\n        timing_days: 0,\n        scheduled_time: '09:00',\n        message_template: '',\n        label: 'Passo 1'\n      }]);\n      const addStep = () => setSteps([...steps, {\n        step_number: steps.length + 1,\n        channel: 'whatsapp',\n        timing_days: 1,\n        scheduled_time: '09:00',\n        message_template: '',\n        label: `Passo ${steps.length + 1}`\n      }]);\n      const removeStep = i => setSteps(steps.filter((_, idx) => idx !== i));\n      const updateStep = (i, key, val) => {\n        const n = [...steps];\n        n[i] = {\n          ...n[i],\n          [key]: val\n        };\n        setSteps(n);\n      };\n      return /*#__PURE__*/React.createElement(\"div\", {\n        style: {\n          padding: 24,\n          maxWidth: 700\n        }\n      }, /*#__PURE__*/React.createElement(\"h3\", {\n        style: {\n          color: 'white',\n          margin: '0 0 16px'\n        }\n      }, cadence?.id ? 'Editar' : 'Nova', \" Cad\\xEAncia\"), /*#__PURE__*/React.createElement(\"input\", {\n        value: name,\n        onChange: e => setName(e.target.value),\n        placeholder: \"Nome da cad\\xEAncia\",\n        style: {\n          marginBottom: 8\n        }\n      }), /*#__PURE__*/React.createElement(\"input\", {\n        value: desc,\n        onChange: e => setDesc(e.target.value),\n        placeholder: \"Descri\\xE7\\xE3o\",\n        style: {\n          marginBottom: 16\n        }\n      }), steps.map((s, i) => /*#__PURE__*/React.createElement(\"div\", {\n        key: i,\n        style: {\n          background: 'rgba(255,255,255,.03)',\n          border: '1px solid var(--border)',\n          borderRadius: 10,\
+<truncated 3684 bytes>
+
+=========================================
+STEP 2497: replace_file_content
+Instruction: "Assign stateRef.current and refactor render function calls to React.createElement."
+Description: "Assign stateRef.current and refactor render nodes of memoized views/modals to React elements (using React.createElement) in index.html."
+
+--- TARGET CONTENT ---
+"  // PARTE 10i — RENDER FINAL\n\n  const Content = () => {\n    if (loading) return /*#__PURE__*/React.createElement(LoadingScreen, null);\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        flex: 1,\n        overflow: 'hidden'\n      }\n    }, TopBar(), view === 'kanban' && KanbanView(), view === 'outbound' && OutboundView(), view === 'indicacoes' && IndicacoesView(), view === 'agent' && AgentView(), view === 'knowledge' && KnowledgeView(), view === 'chat' && ChatView(), view === 'partners' && PartnersView(), view === 'bi' && BiView());\n  };\n  const Modals = () => /*#__PURE__*/React.createElement(React.Fragment, null, modal.type === 'newLead' && NewLeadModal(), modal.type === 'leadDetail' && modal.data && LeadDetailModal({\n    lead: modal.data\n  }), modal.type === 'partner' && PartnerModal({\n    partner: modal.data\n  }), modal.type === 'obDetail' && modal.data && ObDetailModal({\n    ol: modal.data\n  }), modal.type === 'approachTemplate' && modal.data && ApproachTemplateModal({\n    lead: modal.data\n  }), modal.type === 'stageMove' && modal.data && StageMoveModal({\n    data: modal.data\n  }), modal.type === 'outputProtocol' && OutputProtocolModal());"
+
+--- REPLACEMENT CONTENT ---
+"  // PARTE 10i — RENDER FINAL\n\n  stateRef.current = {\n    partners,\n    setPartners,\n    leads,\n    setLeads,\n    actions,\n    setActions,\n    stages,\n    setStages,\n    obLeads,\n    setObLeads,\n    obGeladeira,\n    setObGeladeira,\n    cadences,\n    setCadences,\n    agentConfig,\n    setAgentConfig,\n    knowledge,\n    setKnowledge,\n    chatHistory,\n    setChatHistory,\n    activityLog,\n    setActivityLog,\n    agentLog,\n    setAgentLog,\n    dashboard,\n    setDashboard,\n    indicacoes,\n    setIndicacoes,\n    loading,\n    setLoading,\n    pFilter,\n    setPFilter,\n    search,\n    setSearch,\n    modal,\n    setModal,\n    obSubView,\n    setObSubView,\n    agentSubView,\n    setAgentSubView,\n    knowledgeSubView,\n    setKnowledgeSubView,\n    editingCadence,\n    setEditingCadence,\n    sourceFilter,\n    setSourceFilter,\n    saveTask,\n    deleteLead,\n    savePartner,\n    saveAgentConfig,\n    loadData,\n    G5X_STAGES,\n    OB_STAGES,\n    STALL_DAYS,\n    getRotaInfo,\n    getDaysInStage,\n    isIndicacao,\n    engineStatus,\n    engineLogs,\n    fetchEngineStatus,\n    handleObLeadDrop,\n    chatInputRef,\n    sendChat,\n    chatSending,\n    ORIGEM_INDICACAO,\n    B,\n    saveLead,\n    deletePartner,\n    moveLead,\n    toggleTask,\n    uploadKnowledgeFile,\n    fmtDate,\n    formatKMB,\n    openWA,\n    daysBetween,\n    saveObjection,\n    saveText\n  };\n\n  const Content = () => {\n    if (loading) return /*#__PURE__*/React.createElement(LoadingScreen, null);\n    return /*#__PURE__*/React.createElement(\"div\", {\n      style: {\n        display: 'flex',\n        flexDirection: 'column',\n        flex: 1,\n        overflow: 'hidden'\n      }\n    }, TopBar(), view === 'kanban' && KanbanView(), view === 'outbound' && OutboundView(), view === 'indicacoes' && /*#__PURE__*/React.createElement(IndicacoesView, null), view === 'agent' && AgentView(), view === 'knowledge' && /*#__PURE__*/React.createElement(KnowledgeView, null), view === 'chat' && ChatView(), view === 'part
+<truncated 862 bytes>

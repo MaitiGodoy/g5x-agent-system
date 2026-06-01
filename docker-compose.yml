@@ -1,0 +1,129 @@
+# ═══════════════════════════════════════════
+# G5X MASTER OS — Docker Compose Production
+# ═══════════════════════════════════════════
+
+services:
+  # ── MCP WhatsApp ──
+  mcp-whatsapp:
+    build: .
+    container_name: g5x-mcp-whatsapp
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+    command: node mcps/whatsapp.js
+    networks:
+      - g5x-net
+    volumes:
+      - g5x-data:/app/data
+
+  # ── MCP Email ──
+  mcp-email:
+    build: .
+    container_name: g5x-mcp-email
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - PORT=3002
+      - NODE_ENV=production
+    command: node mcps/email.js
+    networks:
+      - g5x-net
+    volumes:
+      - g5x-data:/app/data
+
+  # ── MCP LinkedIn ──
+  mcp-linkedin:
+    build: .
+    container_name: g5x-mcp-linkedin
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    env_file:
+      - .env
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+    command: node mcps/linkedin.js
+    networks:
+      - g5x-net
+    volumes:
+      - g5x-data:/app/data
+
+  # ── MCP Calendly ──
+  mcp-calendly:
+    build: .
+    container_name: g5x-mcp-calendly
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    env_file:
+      - .env
+    environment:
+      - PORT=3004
+      - NODE_ENV=production
+    command: node mcps/calendly.js
+    networks:
+      - g5x-net
+    volumes:
+      - g5x-data:/app/data
+
+  # ── Servidor CRM + API ──
+  # ── Servidor CRM + API ──
+  g5x-server:
+    build: .
+    container_name: g5x-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATA_DIR=/app/data
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - g5x-data:/app/data
+      - g5x-uploads:/app/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - g5x-net
+
+  # ── Redis para BullMQ ──
+  redis:
+    image: redis:7-alpine
+    container_name: g5x-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - g5x-net
+
+volumes:
+  g5x-data:
+    driver: local
+  g5x-uploads:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  g5x-net:
+    driver: bridge

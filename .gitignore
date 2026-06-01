@@ -1,0 +1,22 @@
+node_modules/
+node_modules_backup/
+.env
+uploads/
+agent_analytics.log
+crm-db.json
+
+# Arquivos de debug/build temporários
+public/debug_jsx.js
+public/debug_jsx.txt
+public/test_original.html
+
+# Controle de sincronização (local apenas)
+.sync-control
+
+# Logs, temp, chaves
+*.log
+*.tar.gz
+deploy_temp/
+*.pem
+*.key
+memory/

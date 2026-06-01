@@ -1,0 +1,34 @@
+{
+  "name": "g5x-agent-system",
+  "version": "1.0.0",
+  "description": "G5X Agent System — CRM SDR Autônomo com IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently --names \"SERVER,AGENT,WA,EMAIL,LI,CL\" --prefix-colors \"cyan,magenta,green,yellow,blue,red\" \"node server.js\" \"node agent.js\" \"node mcps/whatsapp.js\" \"node mcps/email.js\" \"node mcps/linkedin.js\" \"node mcps/calendly.js\"",
+    "dev:server": "node server.js",
+    "dev:agent": "node agent.js",
+    "logs": "concurrently --names \"SERVER,AGENT\" --prefix-colors \"cyan,magenta\" --timestamp-format \"HH:mm:ss\" \"node server.js\" \"node agent.js\"",
+    "build": "node build.js",
+    "agent": "node agent.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.1.0",
+    "@supabase/supabase-js": "^2.105.3",
+    "bullmq": "^5.76.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ioredis": "^5.10.1",
+    "mammoth": "^1.12.0",
+    "multer": "^2.1.1",
+    "officeparser": "^7.0.3",
+    "openai": "^4.38.3",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,2327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>G5X MASTER OS - CRM v25</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+ <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+ <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+ <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+ <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+ <script src="bridge.js"></script>
+ <style>
+ :root{--gold:#C5A059;--gold-bright:#d4af61;--gold-dim:rgba(197,160,89,.12);--black:#000000;--graphite:#0a0a0a;--graphite-light:#111111;--border:#222222;--border-subtle:#141414;--text-primary:#ffffff;--text-secondary:#a0a0a0;--text-muted:#666666;--danger:#e11d48;--zombie:#7c3aed;--amber:#d97706;--success:#16a34a} *{font-family:'Outfit',sans-serif;box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+ body{background-color:var(--black);color:var(--text-primary);margin:0;overflow:hidden;height:100vh;display:flex}
+ ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}::-webkit-scrollbar-thumb:hover{background:var(--gold)}
+ .grab-scroll{cursor:grab;user-select:none;overflow:auto!important}.grab-scroll:active{cursor:grabbing}
+ .lead-card,.partner-card,.bi-card{transition:all .25s cubic-bezier(.16,1,.3,1);border-left:3px solid transparent;cursor:pointer}
+ .lead-card:hover,.partner-card:hover,.bi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.6);border-left-color:var(--gold)}
+ .lead-card.stalled{border-left-color:var(--danger)!important;animation:pulse-red 2s infinite}
+ .lead-card.zombie{border-left-color:var(--zombie)!important;animation:pulse-purple 3s infinite}
+ @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}70%{box-shadow:0 0 0 4px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+ @keyframes pulse-purple{0%{box-shadow:0 0 0 0 rgba(168,85,247,.3)}70%{box-shadow:0 0 0 4px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
+ .glass{background:rgba(17,17,17,.85);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border:1px solid var(--border)}
+ .wa-btn{background:#25D366;color:white;transition:.2s;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}.wa-btn:hover{background:#128C7E;transform:scale(1.03)}
+ input,select,textarea{background:var(--graphite)!important;border:1px solid var(--border)!important;border-radius:8px!important;padding:10px 14px!important;color:var(--text-primary)!important;font-weight:400;width:100%;font-size:14px;transition:border-color .2s}
+ input[type="file"]{display:none!important;width:0!important;height:0!important;padding:0!important;border:none!important}
+ input:focus,textarea:focus{border-color:var(--gold)!important;outline:none;box-shadow:0 0 0 1px var(--gold-dim)}select{cursor:pointer}
+ input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(.7);opacity:.5}
+ button{transition:all .15s}button:active{transform:scale(.97)}
+ .drop-target{background:var(--gold-dim)!important;border:1.5px dashed var(--gold)!important}
+ .kanban-column{background:var(--graphite);border:1px solid var(--border-subtle);border-radius:12px}
+ .ob-card{transition:all .2s cubic-bezier(.16,1,.3,1);border-left:3px solid transparent;cursor:pointer}
+ .ob-card:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.4);border-left-color:var(--amber)}
+ @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.animate-in{animation:fadeIn .25s ease-out}
+ .chat-bubble{max-width:85%;padding:14px 20px;border-radius:16px;margin-bottom:12px;font-size:14.5px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;box-shadow:0 4px 12px rgba(0,0,0,.5);position:relative;animation:msg-in .25s ease-out;letter-spacing:.02em}
+ .chat-bubble code,.chat-bubble pre{font-family:'JetBrains Mono','Consolas',monospace;background:var(--black);padding:4px 8px;border-radius:6px;font-size:.88em;line-height:1.4;border:1px solid var(--border)}
+ .chat-user{background:var(--gold);color:var(--black);margin-left:auto;border-bottom-right-radius:4px;font-weight:600}
+ .chat-agent{background:var(--graphite);color:var(--text-primary);border:1px solid var(--border);border-bottom-left-radius:4px} @keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+ .chat-input-glass{background:rgba(17,17,17,.75)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border)!important;border-radius:12px!important}
+ .kanban-card-compact{padding:10px 12px;margin-bottom:6px}
+ .kanban-card-compact .card-name{font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3}
+ .kanban-card-compact .card-company{font-size:11px;color:var(--text-secondary);margin-top:2px}
+ .kanban-card-compact .card-value{font-size:12px;color:var(--gold);font-weight:600;margin-top:4px}
+ @media(max-width:768px){.sidebar{width:64px!important;padding:6px!important}.sidebar-text{display:none}.main-content{padding:6px!important}}
+ </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useMemo,useRef,useCallback}=React;
+const B=window.G5XBridge;
+
+// PARTE 2 — CONSTANTES E HELPERS
+
+const P='g5x_v25_';
+const STALL_DAYS=5;
+
+// ── Pipeline Único G5X (Esteira Matriz) ──
+// Ambos origens (Intec/Indicação) passam pelos mesmos estágios
+const G5X_STAGES=[
+ {id:'entrada_triagem',title:'Entrada & Triagem',color:'#8b949e'},
+ {id:'diagnostico_agendado',title:'Diagnóstico Agendado',color:'#3b82f6'},
+ {id:'viabilidade_tecnica',title:'Viabilidade Técnica',color:'#d29922'},
+ {id:'apresentacao_teto',title:'Apresentação de Teto',color:'#8b5cf6'},
+ {id:'diligencia_matriz',title:'Diligência Matriz',color:'#ec4899'},
+ {id:'credito_na_tela',title:'Crédito na Tela',color:'#3fb950'},
+ {id:'perdido_arquivado',title:'Perdido/Arquivado',color:'#f85149'}
+];
+
+// ── Origens e Rotas ──
+// Indicação (quente) = rota direta com autoridade emprestada
+// Demais origens (frias) = cadência automatizada
+const ORIGEM_INDICACAO='indicacao';
+
+const ORIGEM_CONFIG={
+ [ORIGEM_INDICACAO]:{
+  label:'Indicação (Quente)',
+  icon:'whatshot',
+  color:'#f59e0b',
+  action:'Bloquear automações. Abordagem Direta.',
+  priority:'Alocação imediata — contato síncrono',
+  obrigatorio:['Nome do Indicador','Fantasia da Construtora']
+ }
+};
+
+// Qualquer lead que NÃO seja indicação é rota fria (cadência)
+const isIndicacao = lead => lead?.source===ORIGEM_INDICACAO||lead?.indicacao_origem;
+
+// Estágios operacionais para execução outbound (cadências)
+const OB_STAGES=[
+ {id:'fila',title:'Fila',color:'#8b949e'},
+ {id:'primeiro_contato',title:'1º Contato',color:'#3b82f6'},
+ {id:'engajamento',title:'Engajamento',color:'#d29922'},
+ {id:'objecao',title:'Objeção',color:'#8b5cf6'},
+ {id:'reuniao',title:'Reunião Agendada',color:'#ec4899'},
+ {id:'proposta',title:'Proposta',color:'#f59e0b'},
+ {id:'convertido',title:'Convertido',color:'#3fb950'},
+ {id:'descartado',title:'Descartado',color:'#f85149'}
+];
+
+const CADENCE_PIPELINE_STAGES=[
+ {id:'c1',title:'C1: WhatsApp Inicial',color:'#25D366',channel:'whatsapp',label:'Contato 1'},
+ {id:'c2',title:'C2: Email Contexto',color:'#3b82f6',channel:'email',label:'Contato 2'},
+ {id:'c3',title:'C3: Ligação Conexão',color:'#ec4899',channel:'whatsapp',label:'Contato 3'},
+ {id:'c4',title:'C4: Follow-up WA',color:'#25D366',channel:'whatsapp',label:'Contato 4'},
+ {id:'c5',title:'C5: Email Valor',color:'#3b82f6',channel:'email',label:'Contato 5'},
+ {id:'c6',title:'C6: Última Tentativa',color:'#f59e0b',channel:'whatsapp',label:'Contato 6'},
+ {id:'c_responded',title:'✅ Respondeu',color:'#3fb950',channel:'any',label:'Engajado'},
+];
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const getDaysInStage=ts=>{if(!ts)return 0;return Math.floor((Date.now()-new Date(ts).getTime())/86400000)};
+const daysBetween=(a,b)=>Math.floor((new Date(b)-new Date(a))/86400000);
+const formatKMB=v=>{const val=Number(v);if(!val||isNaN(val))return'R$ 0';if(val>=1e9)return`R$ ${(val/1e9).toFixed(1).replace('.',',')} bi`;if(val>=1e6)return`R$ ${(val/1e6).toFixed(1).replace('.',',')} M`;if(val>=1e3)return`R$ ${(val/1e3).toFixed(1).replace('.',',')} k`;return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(val)};
+const parseMoney=val=>{if(typeof val==='number')return val;if(!val)return 0;let str=val.toString().toLowerCase().replace('r$','').trim().replace(',','.');let m=1;if(str.includes('bi')){m=1e9;str=str.replace('bi','')}else if(str.includes('m')){m=1e6;str=str.replace('m','')}else if(str.includes('k')){m=1e3;str=str.replace('k','')}str=str.replace(/[^0-9.-]/g,'');const r=parseFloat(str)*m;return isNaN(r)?0:r};
+const todayStr=()=>new Date().toISOString().split('T')[0];
+const fmtDate=d=>{if(!d)return'—';if(d.includes('-'))return d.split('-').reverse().join('/');return d};
+
+// PARTE 3 — APP STATE E INIT
+
+const App=()=>{
+
+// ── Estado principal ──
+const[view,setView]=useState('kanban');
+const[partners,setPartners]=useState([]);
+const[leads,setLeads]=useState([]);
+const[actions,setActions]=useState([]);
+const[stages,setStages]=useState(G5X_STAGES);
+const[obLeads,setObLeads]=useState([]);
+const[obGeladeira,setObGeladeira]=useState([]);
+const[cadences,setCadences]=useState([]);
+const[agentConfig,setAgentConfig]=useState({});
+const[knowledge,setKnowledge]=useState({docs:[],urls:[],faq:[],objections:[],texts:[],observations:[]});
+const[chatHistory,setChatHistory]=useState([]);
+const[chatSending,setChatSending]=useState(false);
+const chatInputRef=useRef(null);
+const stateRef=useRef(null);
+const[activityLog,setActivityLog]=useState([]);
+const[agentLog,setAgentLog]=useState([]);
+const[dashboard,setDashboard]=useState(null);
+const[indicacoes,setIndicacoes]=useState([]);
+
+// ── UI State ──
+const[loading,setLoading]=useState(true);
+const[pFilter,setPFilter]=useState('All');
+const[search,setSearch]=useState('');
+const[modal,setModal]=useState({type:null,data:null});
+const[obSubView,setObSubView]=useState('pipeline');
+const[agentSubView,setAgentSubView]=useState('config');
+const[knowledgeSubView,setKnowledgeSubView]=useState('docs');
+const[editingCadence,setEditingCadence]=useState(null);
+
+const contentRef=useRef(null);
+const sidebarRef=useRef(null);
+const chatEndRef=useRef(null);
+
+// ── Carregar dados do servidor ──
+const loadData=useCallback(async()=>{
+  try{
+  const[p,l,a,s,ob,gel,cad,ac,kd,cl,al,agl,db,ind]=await Promise.all([
+  B.getPartners(),B.getLeads(),B.getTasks(),B.getStages(),
+  B.getObLeads(),B.getGeladeira(),B.getCadences(),
+  B.getAgentConfig(),
+  Promise.all([B.getKnowledgeDocs(),B.getKnowledgeUrls(),B.getKnowledgeFaq(),B.getKnowledgeObjections(),B.getKnowledgeTexts(),B.getObservations()]),
+  B.getChatHistory(),B.getActivityLog(50),B.getAgentLog(50),B.getDashboard(),
+  B.getIndications()
+  ]);
+  setPartners(p||[]);
+  setLeads(l||[]);
+  setActions(a||[]);
+  setStages(s&&s.length?s:G5X_STAGES);
+  setIndicacoes(ind||[]);
+  // Compatibilidade: leads com status antigos recebem status do novo pipeline
+  const stageMap={'novo':'entrada_triagem','apresentacao':'apresentacao_teto','negociacao':'diligencia_matriz',
+    'tramite_tecnico':'viabilidade_tecnica','brasilia':'diligencia_matriz','sucesso':'credito_na_tela','recusado':'perdido_arquivado'};
+  setLeads(prev=>prev.map(l=>({
+    ...l,
+    status: stageMap[l.status]||l.status||'entrada_triagem',
+    indicacao_origem: isIndicacao(l) ? l.indicacao_origem||{indicador:l.main_pain||'Indicador'} : undefined
+  })));
+ setObLeads(ob||[]);
+ setObGeladeira(gel||[]);
+ setCadences(cad||[]);
+ setAgentConfig(ac||{});
+ setKnowledge({docs:kd[0]||[],urls:kd[1]||[],faq:kd[2]||[],objections:kd[3]||[],texts:kd[4]||[],observations:kd[5]||[]});
+ setChatHistory(cl||[]);
+ setActivityLog(al||[]);
+ setAgentLog(agl||[]);
+ setDashboard(db);
+ setLoading(false);
+ }catch(err){
+ console.error('Erro ao carregar dados:',err);
+ setLoading(false);
+ }
+},[]);
+
+useEffect(()=>{loadData()},[loadData]);
+
+// Auto-refresh a cada 30s
+useEffect(()=>{
+ const iv=setInterval(loadData,30000);
+ return()=>clearInterval(iv);
+},[loadData]);
+
+  // Rolagem automática do chat
+  useEffect(() => {
+    if (view === 'chat' && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({
+        behavior: 'smooth'
+      });
+    }
+  }, [chatHistory, view]);
+
+  // Polling de status do motor quando ativo na visualização do agente
+  useEffect(() => {
+    if (view === 'agent' && agentSubView === 'engine') {
+      fetchEngineStatus();
+      const iv = setInterval(fetchEngineStatus, 10000);
+      return () => clearInterval(iv);
+    }
+  }, [view, agentSubView]);
+
+// ── Grab scroll ──
+const setupGrabScroll=ref=>{
+ let isDown=false,sx,sy,sl,st;
+ return{
+ onMouseDown:e=>{const el=ref.current;if(!el)return;isDown=true;sx=e.pageX-el.offsetLeft;sy=e.pageY-el.offsetTop;sl=el.scrollLeft;st=el.scrollTop;el.style.cursor='grabbing'},
+ onMouseMove:e=>{const el=ref.current;if(!el||!isDown)return;e.preventDefault();el.scrollLeft=sl-(e.pageX-el.offsetLeft-sx)*1.5;el.scrollTop=st-(e.pageY-el.offsetTop-sy)*1.5},
+ onMouseUp:()=>{isDown=false;if(ref.current)ref.current.style.cursor='grab'},
+ onMouseLeave:()=>{isDown=false;if(ref.current)ref.current.style.cursor='grab'}
+ };
+};
+
+const gsContent=setupGrabScroll(contentRef);
+const gsSidebar=setupGrabScroll(sidebarRef);
+
+// ── Ações CRM ──
+const openWA=(phone)=>{if(!phone){alert('Telefone não cadastrado.');return}window.open(`https://wa.me/${phone.replace(/\D/g,'')}`,'_blank')};
+
+const saveLead=async(data)=>{
+ if(data.id){await B.updateLead(data.id,data)}
+ else{await B.createLead(data)}
+ await loadData();
+};
+
+const deleteLead=async(id)=>{
+ if(!confirm('Deletar este lead?'))return;
+ await B.deleteLead(id);
+ await loadData();
+};
+
+const moveLead=async(id,status)=>{
+ await B.moveLeadStage(id,status);
+ await loadData();
+};
+
+  const handleObLeadDrop = async (leadId, targetStageId) => {
+    try {
+      const lead = obLeads.find(l => l.id === leadId);
+      if (!lead) return;
+      let updateData = {};
+      if (targetStageId === 'fila') {
+        updateData = { status: 'fila', paused: false };
+      } else if (targetStageId.startsWith('step_')) {
+        const stepNum = parseInt(targetStageId.split('_')[1], 10);
+        updateData = { status: 'execucao', cadencia_step: stepNum, paused: false };
+      } else if (targetStageId === 'objecao') {
+        updateData = { status: 'objecao', paused: false };
+      } else if (targetStageId === 'resposto') {
+        await B.replyObLead(leadId);
+        await loadData();
+        return;
+      } else if (targetStageId === 'pausado') {
+        updateData = { paused: true };
+      }
+      await B.updateObLead(leadId, updateData);
+      await loadData();
+    } catch (err) {
+      console.error('Erro ao mover lead outbound:', err);
+    }
+  };
+
+const savePartner=async(data)=>{
+ if(data.id){await B.updatePartner(data.id,data)}
+ else{await B.createPartner(data)}
+ await loadData();
+};
+
+const deletePartner=async(id)=>{
+ if(!confirm('Excluir parceiro?'))return;
+ await B.deletePartner(id);
+ setModal({type:null});
+ await loadData();
+};
+
+const saveTask=async(data)=>{
+ await B.createTask(data);
+ await loadData();
+};
+
+const toggleTask=async(task)=>{
+ await B.updateTask(task.id,{done:!task.done});
+ await loadData();
+};
+
+// PARTE 4 — AÇÕES OUTBOUND E CHAT
+
+const addToOutbound=async(crmLead)=>{
+ const cadencia=cadences.find(c=>c.status==='Ativa');
+ if(!cadencia){alert('Nenhuma cadência ativa. Crie uma primeiro.');return}
+ const newOb={
+ crm_lead_id:crmLead.id,name:crmLead.name,company:crmLead.company,
+ phone:crmLead.phone,email:crmLead.email,linkedin_url:crmLead.linkedin_url,
+ job_title:crmLead.job_title,value:crmLead.value,partner_id:crmLead.partner_id,
+ status:'fila',last_contact:todayStr(),cadencia_step:1,
+ cadencia_id:cadencia.id,channel:'whatsapp',paused:false
+ };
+ await B.createObLead(newOb);
+ await loadData();
+};
+
+const moveObLead=async(id,newStatus)=>{
+ await B.updateObLead(id,{status:newStatus,last_contact:todayStr()});
+ await B.addObHistory(id,{action_text:`Movido para ${OB_STAGES.find(s=>s.id===newStatus)?.title||newStatus}`,channel:'sistema'});
+ await loadData();
+};
+
+const togglePauseOb=async(id,paused)=>{
+ await B.updateObLead(id,{paused:!paused});
+ await loadData();
+};
+
+const reactivateFromGeladeira=async(g)=>{
+ await B.deleteGeladeira(g.id);
+ const cadencia=cadences.find(c=>c.status==='Ativa');
+ await B.createObLead({
+ crm_lead_id:g.crm_lead_id,name:g.name,company:g.company,
+ phone:g.phone,email:g.email,linkedin_url:g.linkedin_url,
+ status:'engajamento',last_contact:todayStr(),cadencia_step:1,
+ cadencia_id:cadencia?.id,channel:'whatsapp',paused:false
+ });
+ await loadData();
+};
+
+const discardFromGeladeira=async(id)=>{
+ await B.deleteGeladeira(id);
+ await loadData();
+};
+
+// CADÊNCIAS
+const saveCadence=async(data)=>{
+ if(data.id){await B.updateCadence(data.id,data)}
+ else{await B.createCadence(data)}
+ setEditingCadence(null);
+ await loadData();
+};
+
+const deleteCadence=async(id)=>{
+ if(!confirm('Excluir cadência?'))return;
+ await B.deleteCadence(id);
+ await loadData();
+};
+
+const duplicateCadence=async(cad)=>{
+ const dup={...cad,id:undefined,name:cad.name+' (Cópia)',status:'Rascunho',
+ steps:cad.cadence_steps?.map(s=>({...s,id:undefined}))};
+ await B.createCadence(dup);
+ await loadData();
+};
+
+// CHAT
+const sendChat=async()=>{
+  const el=chatInputRef.current;
+  if(!el||!el.value.trim()||chatSending)return;
+  const msg=el.value.trim();
+  el.value='';
+  el.focus();
+  setChatSending(true);
+  setChatHistory(prev=>[...prev,{id:Date.now().toString(),role:'user',content:msg,ts:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}]);
+  try{
+  const response=await B.sendChatMessage(msg);
+  if(response)setChatHistory(prev=>[...prev,response]);
+  }catch(e){
+  setChatHistory(prev=>[...prev,{id:Date.now().toString(),role:'agent',content:'❌ Erro de conexão com a IA. Verifique o servidor.',ts:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}]);
+  }finally{
+  setChatSending(false);
+  setTimeout(()=>{
+  if(chatEndRef.current)chatEndRef.current.scrollIntoView({behavior:'smooth'});
+  },100);
+  }
+ };
+
+// IMPORT LISTA FRIA
+const importLeadFile=async(file,target)=>{
+ const fd=new FormData();
+ fd.append('file',file);
+ fd.append('target',target||'crm');
+ const activeCad=cadences.find(c=>c.status==='Ativa');
+ if(activeCad)fd.append('cadencia_id',activeCad.id);
+ const result=await B.importLeads(fd);
+ if(result&&result.count){
+ alert(`✅ ${result.count} leads importados com sucesso!`);
+ await loadData();
+ }else{
+ alert('❌ Erro ao importar. Verifique o formato do arquivo.');
+ }
+};
+
+// KNOWLEDGE
+const uploadKnowledgeFile=async(file)=>{
+ const fd=new FormData();
+ fd.append('file',file);
+ await B.uploadKnowledge(fd);
+ await loadData();
+};
+
+const addKnowledgeUrl=async(url)=>{
+ await B.addKnowledgeUrl({url,title:url});
+ await loadData();
+};
+
+const saveFaq=async(data)=>{
+ if(data.id){await B.updateKnowledgeFaq(data.id,data)}
+ else{await B.addKnowledgeFaq(data)}
+ await loadData();
+};
+
+const saveObjection=async(data)=>{
+ if(data.id){await B.updateKnowledgeObjection(data.id,data)}
+ else{await B.addKnowledgeObjection(data)}
+ await loadData();
+};
+
+const saveText=async(data)=>{
+ if(data.id){await B.updateKnowledgeText(data.id,data)}
+ else{await B.addKnowledgeText(data)}
+ await loadData();
+};
+
+// AGENT CONFIG
+const saveAgentConfig=async(data)=>{
+ await B.updateAgentConfig(data);
+ await loadData();
+};
+
+// STATS
+const stats=useMemo(()=>{
+ const won=leads.filter(l=>l.status==='credito_na_tela');
+ const revenue=won.reduce((a,b)=>a+Number(b.value||0),0);
+ const net=won.reduce((acc,l)=>{
+ if(l.maiti_comm&&Number(l.maiti_comm)>0)return acc+Number(l.maiti_comm);
+ return acc+(Number(l.value||0)-Number(l.partner_comm||0));
+ },0);
+ const pipe=leads.filter(l=>!['credito_na_tela','perdido_arquivado'].includes(l.status)).reduce((a,b)=>a+Number(b.value||0),0);
+ return{revenue,net,pipe};
+},[leads]);
+
+const filteredLeads=leads.filter(l=>
+ (pFilter==='All'||l.partner_id===pFilter)&&
+ (l.name?.toLowerCase().includes(search.toLowerCase())||l.company?.toLowerCase().includes(search.toLowerCase()))
+);
+
+// PARTE 5 — SIDEBAR E LAYOUT
+
+const navItems=[
+ {id:'kanban',icon:'dashboard',label:'Pipeline Único'},
+ {id:'outbound',icon:'send',label:'Outbound'},
+ {id:'indicacoes',icon:'whatshot',label:'Indicações'},
+ {id:'agent',icon:'smart_toy',label:'Agente'},
+ {id:'knowledge',icon:'menu_book',label:'Conhecimento'},
+ {id:'chat',icon:'chat',label:'Chat'},
+ {id:'partners',icon:'handshake',label:'Parceiros'},
+ {id:'bi',icon:'analytics',label:'BI / Métricas'}
+];
+
+const Sidebar=()=>(
+ <div ref={sidebarRef} className="sidebar" style={{width:220,background:'var(--black)',borderRight:'1px solid var(--border-subtle)',padding:'20px 12px',display:'flex',flexDirection:'column',gap:2,overflowY:'auto'}}>
+ <div style={{padding:'8px 12px',marginBottom:20,borderBottom:'1px solid var(--border-subtle)',paddingBottom:16}}>
+ <div style={{fontSize:20,fontWeight:900,color:'var(--gold)',letterSpacing:'-0.5px'}}>G5X</div>
+ <div style={{fontSize:10,color:'var(--text-muted)',marginTop:2,fontWeight:300,letterSpacing:'.5px',textTransform:'uppercase'}}>Master OS v25</div>
+ </div>
+ {navItems.map(n=>(
+ <button key={n.id} onClick={()=>setView(n.id)} style={{
+ display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:8,border:'none',cursor:'pointer',
+ background:view===n.id?'var(--gold-dim)':'transparent',
+ color:view===n.id?'var(--gold)':'var(--text-muted)',fontWeight:view===n.id?600:400,fontSize:13,textAlign:'left',
+ transition:'all .15s'
+ }}>
+ <span className="material-symbols-outlined" style={{fontSize:19}}>{n.icon}</span>
+ <span className="sidebar-text">{n.label}</span>
+ </button>
+ ))}
+ <div style={{flex:1}}/>
+  <div style={{padding:'10px',background:'var(--gold-dim)',borderRadius:8,border:'1px solid rgba(197,160,89,.1)'}}>
+  <div style={{fontSize:10,color:'var(--gold)',fontWeight:700,letterSpacing:'.5px',textTransform:'uppercase'}}>Resumo</div>
+  <div style={{fontSize:12,color:'var(--text-secondary)',marginTop:6,lineHeight:1.8}}>
+  <div>Leads: <span style={{color:'var(--text-primary)',fontWeight:600}}>{leads.length}</span></div>
+  <div>Indicações: <span style={{color:'var(--amber)',fontWeight:600}}>{indicacoes.filter(i=>i.status!=='converted').length}</span></div>
+  <div>Receita: <span style={{color:'var(--gold)',fontWeight:600}}>{formatKMB(stats.revenue)}</span></div>
+  </div>
+  </div>
+ </div>
+);
+
+const TopBar=()=>(
+ <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 24px',borderBottom:'1px solid var(--border-subtle)',background:'var(--black)'}}>
+ <div style={{display:'flex',alignItems:'center',gap:16}}>
+ <h1 style={{fontSize:18,fontWeight:700,color:'var(--text-primary)',margin:0,letterSpacing:'-.3px'}}>{navItems.find(n=>n.id===view)?.label||'Dashboard'}</h1>
+ {view==='kanban'&&(
+ <div style={{display:'flex',alignItems:'center',gap:8}}>
+ <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar lead..."
+ style={{width:180,padding:'7px 12px!important',fontSize:13}}/>
+ <select value={pFilter} onChange={e=>setPFilter(e.target.value)}
+ style={{width:150,padding:'7px!important',fontSize:13}}>
+ <option value="All">Todos parceiros</option>
+ {partners.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+ </select>
+ </div>
+ )}
+ </div>
+ <div style={{display:'flex',alignItems:'center',gap:6}}>
+ <button onClick={()=>setModal({type:'newLead'})} style={{
+ background:'var(--gold)',color:'var(--black)',border:'none',padding:'7px 14px',borderRadius:7,
+ fontWeight:700,fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',gap:5
+ }}>
+ <span className="material-symbols-outlined" style={{fontSize:15}}>add</span> Novo Lead
+ </button>
+ <label style={{
+ background:'transparent',color:'var(--text-secondary)',border:'1px solid var(--border)',padding:'7px 12px',borderRadius:7,
+ fontWeight:500,fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',gap:5,transition:'all .15s'
+ }}>
+ <span className="material-symbols-outlined" style={{fontSize:15}}>upload_file</span> Importar
+ <input type="file" accept=".csv,.txt,.json,.xlsx,.xls,.pdf,.docx,.pptx" style={{display:'none'}}
+ onChange={e=>{if(e.target.files[0]){const target=view==='outbound'?'outbound':'crm';importLeadFile(e.target.files[0],target);e.target.value=''}}}/>
+ </label>
+ <button onClick={loadData} style={{
+ background:'transparent',color:'var(--text-muted)',border:'1px solid var(--border-subtle)',padding:'7px 10px',
+ borderRadius:7,fontSize:12,cursor:'pointer',transition:'all .15s'
+ }}>
+ <span className="material-symbols-outlined" style={{fontSize:15}}>refresh</span>
+ </button>
+ </div>
+ </div>
+);
+
+const LoadingScreen=()=>(
+ <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',width:'100%',background:'var(--black)'}}>
+ <div style={{textAlign:'center'}}>
+ <div style={{fontSize:40,fontWeight:900,color:'var(--gold)',marginBottom:6,letterSpacing:'-1px'}}>G5X</div>
+ <div style={{color:'var(--text-muted)',fontSize:12,fontWeight:300}}>Carregando dados do servidor...</div>
+ <div style={{marginTop:14,width:160,height:2,background:'var(--border-subtle)',borderRadius:4,overflow:'hidden'}}>
+ <div style={{width:'60%',height:'100%',background:'var(--gold)',borderRadius:4,animation:'loading 1.5s ease infinite'}}/>
+ </div>
+ </div>
+ </div>
+);
+
+// ── Rota Definida / Output Protocol ──
+// Rota = fria (cadência automatizada) ou quente (contato direto)
+const ROTA_FRIA='rota_fria';
+const ROTA_QUENTE='rota_quente';
+
+const getRotaInfo=(lead)=>{
+  const isHot=isIndicacao(lead);
+  const sourceLabel=lead?.source||'desconhecida';
+  if(isHot){
+    return{
+      rota:'Abordagem Direta (Indicação)',
+      tag:'#indicacao',
+      cor:ORIGEM_CONFIG[ORIGEM_INDICACAO].color,
+      label:'Indicação (Quente)',
+      acao:'Contato direto. Bloquear automações.',
+      routeType:ROTA_QUENTE
+    };
+  }
+  return{
+    rota:'Cadência Automatizada',
+    tag:'#'+sourceLabel,
+    cor:'#3b82f6',
+    label:sourceLabel==='import'?'Importado (Frio)':sourceLabel==='manual'?'Manual (Frio)':sourceLabel==='intec'?'Intec (Frio)':'Lead Frio',
+    acao:`Cadência de 10 Toques (${sourceLabel})`,
+    routeType:ROTA_FRIA
+  };
+};
+
+const OutputProtocolBadge=({lead})=>{
+  const info=getRotaInfo(lead);
+  return(
+    <div style={{display:'flex',gap:4,fontSize:10,marginBottom:4}}>
+      <span style={{background:info.cor,color:'white',padding:'1px 6px',borderRadius:4,fontWeight:600}}>{info.tag}</span>
+      <span style={{color:'#8b949e',fontSize:10}}>{info.rota}</span>
+    </div>
+  );
+};
+
+// PARTE 6 — KANBAN CRM UNIFICADO
+
+const[sourceFilter,setSourceFilter]=useState('todas');
+
+const LeadCard=({lead})=>{
+ const days=getDaysInStage(lead.last_stage_change);
+ const stalled=days>=STALL_DAYS&&!['credito_na_tela','perdido_arquivado'].includes(lead.status);
+ const partner=partners.find(p=>p.id===lead.partner_id);
+ const ehIndicacao=isIndicacao(lead);
+ return(
+ <div className={`lead-card ${stalled?'stalled':''} ${ehIndicacao?'':'zombie'}`}
+   onClick={()=>setModal({type:'leadDetail',data:lead})}
+   style={{background:'var(--graphite)',borderRadius:'6px',padding:'8px 10px',marginBottom:'6px',
+     border:'1px solid var(--border-subtle)',borderLeftWidth:'3px',borderLeftColor:stages.find(s=>s.id===lead.status)?.color||'var(--border)'}}>
+ <OutputProtocolBadge lead={lead}/>
+ <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'2px'}}>
+ <div style={{fontSize:'12px',fontWeight:600,color:'var(--text-primary)',lineHeight:1.2,letterSpacing:'0.02em'}}>{lead.name}</div>
+ {stalled&&<span style={{fontSize:'9px',background:'rgba(225,29,72,.15)',color:'var(--danger)',padding:'1px 4px',borderRadius:'4px',fontWeight:600,marginLeft:'4px'}}>⚠{days}d</span>}
+ </div>
+ <div style={{fontSize:'10px',color:'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{lead.company||'—'}</div>
+ <div style={{display:'flex',alignItems:'center',gap:'6px',marginTop:'4px',flexWrap:'wrap'}}>
+ {lead.value>0&&<div style={{fontSize:'11px',color:'var(--gold)',fontWeight:600}}>{formatKMB(lead.value)}</div>}
+ {partner&&<div style={{fontSize:'9px',color:'var(--text-secondary)',background:'rgba(255,255,255,0.05)',padding:'1px 4px',borderRadius:'3px'}}>🤝 {partner.name}</div>}
+ {ehIndicacao&&lead.indicacao_origem?.indicador&&
+   <div style={{fontSize:'9px',color:'var(--amber)',background:'rgba(217,119,6,0.1)',padding:'1px 4px',borderRadius:'3px'}}>👤 {lead.indicacao_origem.indicador}</div>}
+ </div>
+ <div style={{display:'flex',gap:3,marginTop:6}}>
+ {lead.phone&&<button onClick={e=>{e.stopPropagation();openWA(lead.phone)}} style={{background:'#16a34a',color:'white',border:'none',padding:'2px 5px',borderRadius:4,fontSize:9,cursor:'pointer'}}>📱</button>}
+ {lead.email&&<button onClick={e=>{e.stopPropagation();window.open(`mailto:${lead.email}`)}} style={{background:'#2563eb',color:'white',border:'none',padding:'2px 5px',borderRadius:4,fontSize:9,cursor:'pointer'}}>📧</button>}
+ <button onClick={e=>{e.stopPropagation();setModal({type:'approachTemplate',data:lead})}}
+   style={{background:'var(--gold-dim)',color:'var(--gold)',border:'none',padding:'2px 5px',borderRadius:4,fontSize:9,cursor:'pointer',fontWeight:600}}>📋</button>
+ </div>
+ </div>
+ );
+};
+
+const KanbanColumn = useMemo(() => {
+  return ({stage,leadsList,onDrop})=>{
+    const { leads, setModal, B, G5X_STAGES, setLeads } = stateRef.current;
+    const[dragOver,setDragOver]=useState(false);
+    const handleDragOver=e=>{e.preventDefault();setDragOver(true)};
+    const handleDragLeave=()=>setDragOver(false);
+    const handleDrop=e=>{
+      e.preventDefault();setDragOver(false);
+      const leadId=e.dataTransfer.getData('text/plain');
+      const lead=leads.find(l=>l.id===leadId);
+      if(lead&&lead.status!==stage.id){
+        const info=getRotaInfo(lead);
+        const stageInfo=G5X_STAGES.find(s=>s.id===stage.id);
+        const camposNeeded=[];
+        if(stage.id==='viabilidade_tecnica')camposNeeded.push('Anexar Balanço Patrimonial');
+        if(stage.id==='diagnostico_agendado')camposNeeded.push('Data da Call de 15min');
+        if(stage.id==='apresentacao_teto')camposNeeded.push('Teto de até 5x faturamento');
+        if(stage.id==='diligencia_matriz')camposNeeded.push('Montar Pasta Técnica');
+        if(stage.id==='credito_na_tela')camposNeeded.push('Honorários no Êxito');
+        const msg=camposNeeded.length?`Campos para ${stageInfo.title}: ${camposNeeded.join(', ')}`:'';
+        setModal({type:'stageMove',data:{lead,newStage:stage.id,stageInfo,camposNeeded,msg}});
+      }
+    };
+    return(
+      <div className={`kanban-column ${dragOver?'drop-target':''}`}
+        onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+        style={{minWidth:260,maxWidth:300,flex:1,padding:10,transition:'all .15s'}}>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,padding:'0 4px'}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:stage.color}}/>
+          <div style={{fontWeight:600,fontSize:12,color:'var(--text-primary)'}}>{stage.title}</div>
+          <div style={{marginLeft:'auto',fontSize:11,color:'var(--text-muted)',background:'rgba(255,255,255,.04)',padding:'1px 7px',borderRadius:6}}>{leadsList.length}</div>
+        </div>
+        <div style={{maxHeight:'calc(100vh - 180px)',overflowY:'auto',minHeight:60}}>
+          {leadsList.map(l=>(
+            <div key={l.id} draggable
+              onDragStart={e=>e.dataTransfer.setData('text/plain',l.id)}
+              style={{cursor:'grab'}}>
+              <LeadCard lead={l}/>
+            </div>
+          ))}
+          {leadsList.length===0&&<div style={{textAlign:'center',color:'var(--border)',fontSize:12,padding:16}}>Vazio</div>}
+        </div>
+      </div>
+    );
+  };
+}, []);
+
+const KanbanView=()=>{
+  const sourceTabs=[
+    {id:'todas',label:'Todas',icon:'all_inclusive',cor:'var(--gold)'},
+    {id:ORIGEM_INDICACAO,label:'Indicações',icon:'whatshot',cor:ORIGEM_CONFIG[ORIGEM_INDICACAO].color},
+    {id:'frias',label:'Frias',icon:'ac_unit',cor:'#3b82f6'}
+  ];
+  const filteredBySource=sourceFilter==='todas'?filteredLeads:
+    sourceFilter===ORIGEM_INDICACAO?
+      filteredLeads.filter(l=>isIndicacao(l)):
+      filteredLeads.filter(l=>!isIndicacao(l));
+  return(
+    <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden',background:'var(--black)'}}>
+      <div style={{display:'flex',gap:2,padding:'6px 24px 0',borderBottom:'1px solid var(--border-subtle)'}}>
+        {sourceTabs.map(t=>(
+          <button key={t.id} onClick={()=>setSourceFilter(t.id)} style={{
+            padding:'7px 12px',border:'none',background:'transparent',cursor:'pointer',
+            color:sourceFilter===t.id?t.cor:'var(--text-muted)',
+            fontWeight:sourceFilter===t.id?600:400,
+            borderBottom:sourceFilter===t.id?`1.5px solid ${t.cor}`:'1.5px solid transparent',
+            fontSize:12,display:'flex',alignItems:'center',gap:5,transition:'all .15s'
+          }}>
+            <span className="material-symbols-outlined" style={{fontSize:15}}>{t.icon}</span>
+            {t.label}
+            <span style={{fontSize:10,marginLeft:1,opacity:.6}}>
+              ({sourceFilter==='todas'?filteredLeads.length:
+                sourceFilter===ORIGEM_INDICACAO?
+                  filteredLeads.filter(l=>isIndicacao(l)).length:
+                  filteredLeads.filter(l=>!isIndicacao(l)).length
+              })
+            </span>
+          </button>
+        ))}
+        <div style={{flex:1}}/>
+        <button onClick={()=>setModal({type:'outputProtocol'})}
+          style={{padding:'5px 10px',border:'1px solid var(--border-subtle)',background:'transparent',
+            color:'var(--text-muted)',borderRadius:5,fontSize:10.5,cursor:'pointer',display:'flex',alignItems:'center',gap:3}}>
+          <span className="material-symbols-outlined" style={{fontSize:13}}>info</span> Protocolo
+        </button>
+      </div>
+      <div className="grab-scroll" ref={contentRef} onMouseDown={gsContent.onMouseDown} onMouseMove={gsContent.onMouseMove}
+        onMouseUp={gsContent.onMouseUp} onMouseLeave={gsContent.onMouseLeave}
+        style={{display:'flex',gap:12,padding:'12px 24px',overflowX:'auto',overflowY:'hidden',flex:1,background:'var(--black)'}}>
+        {stages.map(s=>(
+          <KanbanColumn key={s.id} stage={s} leadsList={filteredBySource.filter(l=>l.status===s.id)} onDrop={()=>{}}/>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// PARTE 7a — OUTBOUND CARDS
+
+const ObCard=({ol})=>{
+ const {setModal, OB_STAGES, fmtDate}=stateRef.current;
+ const handleDragStart = e => {
+   e.dataTransfer.setData('text/plain', ol.id);
+ };
+ return (
+ <div className="ob-card" 
+ draggable
+ onDragStart={handleDragStart}
+ onClick={()=>setModal({type:'obDetail',data:ol})}
+ style={{background:'var(--graphite)',borderRadius:8,padding:10,marginBottom:5,borderLeftColor:OB_STAGES.find(s=>s.id===ol.status)?.color||'var(--border)', cursor: 'grab'}}>
+ <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+ <div style={{fontWeight:600,fontSize:12.5,color:'var(--text-primary)'}}>{ol.name}</div>
+ {ol.paused&&<span style={{fontSize:9,background:'rgba(168,85,247,.15)',color:'var(--zombie)',padding:'1px 5px',borderRadius:4}}>⏸</span>}
+ </div>
+ <div style={{fontSize:10.5,color:'var(--text-secondary)',marginTop:1}}>{ol.company||'—'}</div>
+ <div style={{display:'flex',gap:6,marginTop:4,fontSize:10,color:'var(--text-muted)'}}>
+ <span>Passo {ol.cadencia_step||'—'}</span>
+ <span>•</span>
+ <span>{ol.channel||'whatsapp'}</span>
+ {ol.last_contact&&<><span>•</span><span>{fmtDate(ol.last_contact)}</span></>}
+ </div>
+ </div>
+ );
+};
+
+const ObPipelineColumn = ({ stage, leadsList, onDrop }) => {
+  const { setModal } = stateRef.current;
+  const [dragOver, setDragOver] = useState(false);
+  const handleDragOver = e => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+  const handleDragLeave = () => setDragOver(false);
+  const handleDrop = e => {
+    e.preventDefault();
+    setDragOver(false);
+    const leadId = e.dataTransfer.getData('text/plain');
+    onDrop(leadId, stage.id);
+  };
+
+  return (
+    <div 
+      className={`kanban-column ${dragOver ? 'drop-target' : ''}`}
+      onDragOver={handleDragOver} 
+      onDragLeave={handleDragLeave} 
+      onDrop={handleDrop}
+      style={{minWidth:240, flex:1, padding:12, transition:'all .15s'}}
+    >
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:12}}>
+        <div style={{width:10, height:10, borderRadius:'50%', background:stage.color}}/>
+        <div style={{fontWeight:700, fontSize:13, color:'white'}}>{stage.title}</div>
+        <div style={{marginLeft:'auto', fontSize:12, color:'#8b949e'}}>{leadsList.length}</div>
+      </div>
+      <div style={{maxHeight:'calc(100vh - 220px)', overflowY:'auto'}}>
+        {leadsList.map(l => <ObCard key={l.id} ol={l}/>)}
+        {leadsList.length === 0 && <div style={{textAlign:'center', color:'var(--border)', fontSize:12, padding:16}}>Vazio</div>}
+      </div>
+    </div>
+  );
+};
+
+const ObPipeline=()=>{
+  const {contentRef, gsContent, obLeads, cadences, handleObLeadDrop}=stateRef.current;
+  const activeCadence = cadences.find(c => c.status === 'Ativa');
+  let obStages = [];
+
+  if (activeCadence && activeCadence.cadence_steps && activeCadence.cadence_steps.length > 0) {
+    obStages.push({ id: 'fila', title: 'Fila', color: '#8b949e', filter: l => l.status === 'fila' && !l.paused });
+    const colors = ['#3b82f6', '#d29922', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#06b6d4'];
+    activeCadence.cadence_steps.forEach((step, idx) => {
+      const stepNum = step.step_number;
+      obStages.push({
+        id: `step_${stepNum}`,
+        title: `Passo ${stepNum} (${step.channel})`,
+        color: colors[idx % colors.length],
+        filter: l => l.status !== 'fila' && l.status !== 'objecao' && l.status !== 'resposto' && l.status !== 'convertido' && l.status !== 'descartado' && l.cadencia_step === stepNum && !l.paused
+      });
+    });
+    obStages.push({ id: 'objecao', title: 'Objeção', color: '#ef4444', filter: l => l.status === 'objecao' && !l.paused });
+    obStages.push({ id: 'resposto', title: 'Resposto / Convertido', color: '#10b981', filter: l => (l.status === 'resposto' || l.status === 'convertido') && !l.paused });
+    obStages.push({ id: 'pausado', title: 'Pausados / Congelados', color: '#6e7681', filter: l => l.paused || l.status === 'descartado' });
+  } else {
+    obStages = [
+      { id: 'fila', title: 'Fila', color: '#8b949e', filter: l => l.status === 'fila' },
+      { id: 'ativo', title: 'Em Execução', color: '#3b82f6', filter: l => l.status !== 'fila' && l.status !== 'objecao' && l.status !== 'resposto' && l.status !== 'convertido' && l.status !== 'descartado' && !l.paused },
+      { id: 'objecao', title: 'Objeção', color: '#ef4444', filter: l => l.status === 'objecao' },
+      { id: 'resposto', title: 'Respostos', color: '#10b981', filter: l => l.status === 'resposto' || l.status === 'convertido' },
+      { id: 'pausado', title: 'Pausados', color: '#6e7681', filter: l => l.paused || l.status === 'descartado' }
+    ];
+  }
+
+  return (
+    <div className="grab-scroll" ref={contentRef} onMouseDown={gsContent.onMouseDown} onMouseMove={gsContent.onMouseMove}
+      onMouseUp={gsContent.onMouseUp} onMouseLeave={gsContent.onMouseLeave}
+      style={{display:'flex', gap:12, padding:'16px 24px', overflowX:'auto', overflowY:'hidden', flex:1}}>
+      {obStages.map(s => (
+        <ObPipelineColumn 
+          key={s.id} 
+          stage={s} 
+          leadsList={obLeads.filter(s.filter)} 
+          onDrop={handleObLeadDrop}
+        />
+      ))}
+    </div>
+  );
+};
+
+// PARTE 7b — GELADEIRA
+
+const GeladeiraView=()=>(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+ <div style={{marginBottom:16}}>
+ <h3 style={{color:'white',margin:0,fontSize:16}}>🧊 Geladeira — {obGeladeira.length} leads</h3>
+ <p style={{color:'#8b949e',fontSize:12,margin:'4px 0 0'}}>Leads que esgotaram cadência. Decida: reativar ou descartar.</p>
+ </div>
+ {obGeladeira.length===0?<div style={{textAlign:'center',color:'#30363d',padding:40}}>Nenhum lead na geladeira</div>:
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:12}}>
+ {obGeladeira.map(g=>(
+ <div key={g.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16,borderLeft:'5px solid #3b82f6'}}>
+ <div style={{fontWeight:700,color:'white'}}>{g.name}</div>
+ <div style={{fontSize:12,color:'#8b949e'}}>{g.company||'—'}</div>
+ <div style={{fontSize:11,color:'var(--zombie)',marginTop:4}}>Motivo: {g.reason}</div>
+ <div style={{fontSize:11,color:'#8b949e',marginTop:2}}>Desde: {fmtDate(g.entered_at)}</div>
+ <div style={{display:'flex',gap:8,marginTop:12}}>
+ <button onClick={()=>reactivateFromGeladeira(g)} style={{background:'var(--gold)',color:'black',border:'none',padding:'6px 12px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>🔄 Reativar</button>
+ <button onClick={()=>discardFromGeladeira(g.id)} style={{background:'rgba(239,68,68,.15)',color:'#ef4444',border:'none',padding:'6px 12px',borderRadius:8,fontWeight:600,fontSize:12,cursor:'pointer'}}>🗑️ Descartar</button>
+ </div>
+ </div>
+ ))}
+ </div>}
+ </div>
+);
+// PARTE 7c — CADÊNCIAS
+
+const CadenceEditor=({cadence,onSave,onCancel})=>{
+ const[name,setName]=useState(cadence?.name||'');
+ const[desc,setDesc]=useState(cadence?.description||'');
+ const[steps,setSteps]=useState(cadence?.cadence_steps||[{step_number:1,channel:'whatsapp',timing_days:0,scheduled_time:'09:00',message_template:'',label:'Passo 1'}]);
+ const addStep=()=>setSteps([...steps,{step_number:steps.length+1,channel:'whatsapp',timing_days:1,scheduled_time:'09:00',message_template:'',label:`Passo ${steps.length+1}`}]);
+ const removeStep=i=>setSteps(steps.filter((_,idx)=>idx!==i));
+ const updateStep=(i,key,val)=>{const n=[...steps];n[i]={...n[i],[key]:val};setSteps(n)};
+ return(
+ <div style={{padding:24,maxWidth:700}}>
+ <h3 style={{color:'white',margin:'0 0 16px'}}>{cadence?.id?'Editar':'Nova'} Cadência</h3>
+ <input value={name} onChange={e=>setName(e.target.value)} placeholder="Nome da cadência" style={{marginBottom:8}}/>
+ <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Descrição" style={{marginBottom:16}}/>
+ {steps.map((s,i)=>(
+ <div key={i} style={{background:'rgba(255,255,255,.03)',border:'1px solid var(--border)',borderRadius:10,padding:12,marginBottom:8}}>
+ <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
+ <span style={{color:'var(--gold)',fontWeight:700,fontSize:13}}>#{i+1}</span>
+ <input value={s.label||''} onChange={e=>updateStep(i,'label',e.target.value)} placeholder="Rótulo" style={{flex:1,margin:0}}/>
+ <select value={s.channel} onChange={e=>updateStep(i,'channel',e.target.value)} style={{width:120}}>
+ <option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="linkedin">LinkedIn</option>
+ </select>
+ <input type="number" value={s.timing_days} onChange={e=>updateStep(i,'timing_days',parseInt(e.target.value)||0)} placeholder="Dias" style={{width:70}}/>
+ <button onClick={()=>removeStep(i)} style={{background:'rgba(239,68,68,.15)',color:'#ef4444',border:'none',padding:'6px 10px',borderRadius:6,cursor:'pointer',fontSize:12}}>✕</button>
+ </div>
+ <textarea value={s.message_template||''} onChange={e=>updateStep(i,'message_template',e.target.value)} placeholder="Template. Use {{firstName}}, {{company}}, {{pain}}" rows={3}/>
+ </div>
+ ))}
+ <div style={{display:'flex',gap:8,marginTop:12}}>
+ <button onClick={addStep} style={{background:'rgba(197,160,89,.15)',color:'var(--gold)',border:'1px solid rgba(197,160,89,.3)',padding:'8px 16px',borderRadius:8,fontWeight:600,fontSize:13,cursor:'pointer'}}>+ Adicionar Passo</button>
+ <div style={{flex:1}}/>
+ <button onClick={onCancel} style={{background:'transparent',color:'#8b949e',border:'1px solid var(--border)',padding:'8px 16px',borderRadius:8,fontSize:13,cursor:'pointer'}}>Cancelar</button>
+ <button onClick={()=>onSave({id:cadence?.id,name,description:desc,status:cadence?.status||'Rascunho',steps})} style={{background:'var(--gold)',color:'black',border:'none',padding:'8px 20px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>Salvar</button>
+ </div>
+ </div>
+ );
+};
+
+const CadencesView=()=>(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+ {editingCadence!==null?<CadenceEditor cadence={editingCadence} onSave={saveCadence} onCancel={()=>setEditingCadence(null)}/>:
+ <>
+ <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+ <h3 style={{color:'white',margin:0}}>Cadências — {cadences.length}</h3>
+ <button onClick={()=>setEditingCadence({})} style={{background:'var(--gold)',color:'black',border:'none',padding:'8px 16px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>+ Nova Cadência</button>
+ </div>
+ {cadences.length===0?<div style={{textAlign:'center',color:'#30363d',padding:40}}>Nenhuma cadência criada</div>:
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:12}}>
+ {cadences.map(c=>(
+ <div key={c.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16}}>
+ <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+ <div style={{fontWeight:700,color:'white'}}>{c.name}</div>
+ <span style={{fontSize:11,padding:'2px 8px',borderRadius:6,background:c.status==='Ativa'?'rgba(63,185,80,.15)':'rgba(139,148,158,.15)',color:c.status==='Ativa'?'#3fb950':'#8b949e'}}>{c.status}</span>
+ </div>
+ <div style={{fontSize:12,color:'#8b949e',marginTop:4}}>{c.description||'Sem descrição'}</div>
+ <div style={{fontSize:11,color:'var(--gold)',marginTop:6}}>{c.cadence_steps?.length||0} passos</div>
+ <div style={{display:'flex',gap:6,marginTop:12}}>
+ <button onClick={()=>setEditingCadence(c)} style={{background:'rgba(59,130,246,.15)',color:'#3b82f6',border:'none',padding:'5px 10px',borderRadius:6,fontSize:11,cursor:'pointer'}}>Editar</button>
+ <button onClick={()=>duplicateCadence(c)} style={{background:'rgba(197,160,89,.15)',color:'var(--gold)',border:'none',padding:'5px 10px',borderRadius:6,fontSize:11,cursor:'pointer'}}>Duplicar</button>
+ <button onClick={()=>deleteCadence(c.id)} style={{background:'rgba(239,68,68,.15)',color:'#ef4444',border:'none',padding:'5px 10px',borderRadius:6,fontSize:11,cursor:'pointer'}}>Excluir</button>
+ </div>
+ </div>
+ ))}
+ </div>}
+ </>}
+ </div>
+);
+
+// PARTE 7d — OUTBOUND VIEW (Operacional — sem pipeline)
+
+const OutboundView=()=>{
+ const {obSubView,setObSubView,cadences,obLeads,obGeladeira,agentConfig}=stateRef.current;
+ const tabs=[
+   {id:'pipeline',label:'Pipeline Outbound',icon:'view_kanban'},
+   {id:'cadences',label:'Cadências',icon:'step'},
+   {id:'geladeira',label:'Geladeira',icon:'ac_unit'},
+   {id:'config',label:'Config Operacional',icon:'settings'}
+  ];
+ return(
+ <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+ <div style={{display:'flex',gap:4,padding:'12px 24px 0',borderBottom:'1px solid var(--border)'}}>
+ {tabs.map(t=>(
+ <button key={t.id} onClick={()=>setObSubView(t.id)} style={{
+ padding:'8px 16px',border:'none',background:'transparent',cursor:'pointer',
+ color:obSubView===t.id?'var(--gold)':'#8b949e',fontWeight:obSubView===t.id?700:400,
+ borderBottom:obSubView===t.id?'2px solid var(--gold)':'2px solid transparent',fontSize:13
+ }}><span className="material-symbols-outlined" style={{fontSize:16,verticalAlign:'middle',marginRight:4}}>{t.icon}</span>{t.label}</button>
+ ))}
+ </div>
+ {obSubView==='pipeline'&&ObPipeline()}
+ {obSubView==='cadences'&&<CadencesView/>}
+ {obSubView==='geladeira'&&<GeladeiraView/>} {obSubView==='cadences'&&<CadencesView/>}
+ {obSubView==='geladeira'&&<GeladeiraView/>}
+ {obSubView==='config'&&(
+   <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+     <h3 style={{color:'white',margin:'0 0 16px'}}>⚙️ Configuração Operacional</h3>
+     <p style={{color:'#8b949e',fontSize:13,marginBottom:16}}>
+       Esta aba é para configuração da operação outbound. Cadências e leads congelados (geladeira) gerenciam a execução automatizada.
+     </p>
+     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12}}>
+       <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16}}>
+         <div style={{fontWeight:700,color:'white',marginBottom:8}}>📊 Status da Operação</div>
+         <div style={{fontSize:12,color:'#8b949e',lineHeight:2}}>
+           <div>Cadências Ativas: {cadences.filter(c=>c.status==='Ativa').length}/{cadences.length}</div>
+           <div>Leads em Cadência: {obLeads.filter(l=>!l.paused&&l.status!=='descartado').length}</div>
+           <div>Na Geladeira: {obGeladeira.length}</div>
+           <div>Pausados: {obLeads.filter(l=>l.paused).length}</div>
+         </div>
+       </div>
+       <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16}}>
+         <div style={{fontWeight:700,color:'white',marginBottom:8}}>🤖 Agente Outbound</div>
+         <div style={{fontSize:12,color:'#8b949e',lineHeight:2}}>
+           <div>Status: {agentConfig.running?'🟢 Rodando':'🔴 Pausado'}</div>
+           <div>Modo Humano: {agentConfig.human_mode?'Ativo':'Desligado'}</div>
+           <div>Horário: {agentConfig.horario_inicio||'08:00'} - {agentConfig.horario_fim||'18:00'}</div>
+         </div>
+       </div>
+     </div>
+   </div>
+ )}
+ </div>
+ );
+};
+
+// PARTE 8a — AGENT CONFIG VIEW
+
+const AgentConfigView=()=>(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1,maxWidth:600}}>
+ <h3 style={{color:'white',margin:'0 0 16px'}}>Configuração do Agente</h3>
+ <div style={{display:'flex',flexDirection:'column',gap:12}}>
+ <div>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Nome do Agente</label>
+ <input value={agentConfig.nome||''} onChange={e=>setAgentConfig({...agentConfig,nome:e.target.value})}/>
+ </div>
+ <div>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Persona</label>
+ <textarea value={agentConfig.persona||''} onChange={e=>setAgentConfig({...agentConfig,persona:e.target.value})} rows={3}/>
+ </div>
+ <div>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Tom de Voz</label>
+ <select value={agentConfig.tom||'profissional'} onChange={e=>setAgentConfig({...agentConfig,tom:e.target.value})}>
+ <option value="profissional">Profissional</option>
+ <option value="casual">Casual</option>
+ <option value="consultivo">Consultivo</option>
+ <option value="direto">Direto</option>
+ <option value="amigavel">Amigável</option>
+ </select>
+ </div>
+ <div style={{display:'flex',gap:12}}>
+ <div style={{flex:1}}>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Horário Início</label>
+ <input type="time" value={agentConfig.horario_inicio||'08:00'} onChange={e=>setAgentConfig({...agentConfig,horario_inicio:e.target.value})}/>
+ </div>
+ <div style={{flex:1}}>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Horário Fim</label>
+ <input type="time" value={agentConfig.horario_fim||'18:00'} onChange={e=>setAgentConfig({...agentConfig,horario_fim:e.target.value})}/>
+ </div>
+ </div>
+ <div style={{display:'flex',gap:12}}>
+ <div style={{flex:1}}>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Delay Min (s)</label>
+ <input type="number" value={agentConfig.delay_min||30} onChange={e=>setAgentConfig({...agentConfig,delay_min:parseInt(e.target.value)||0})}/>
+ </div>
+ <div style={{flex:1}}>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Delay Max (s)</label>
+ <input type="number" value={agentConfig.delay_max||180} onChange={e=>setAgentConfig({...agentConfig,delay_max:parseInt(e.target.value)||0})}/>
+ </div>
+ </div>
+ <div style={{display:'flex',gap:12}}>
+ <div style={{flex:1}}>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Max Msgs/Hora</label>
+ <input type="number" value={agentConfig.max_msg_hour||10} onChange={e=>setAgentConfig({...agentConfig,max_msg_hour:parseInt(e.target.value)||0})}/>
+ </div>
+ <div style={{flex:1}}>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Modo Humano</label>
+ <select value={agentConfig.human_mode?'true':'false'} onChange={e=>setAgentConfig({...agentConfig,human_mode:e.target.value==='true'})}>
+ <option value="true">Ativo</option><option value="false">Desligado</option>
+ </select>
+ </div>
+ </div>
+ <div>
+ <label style={{color:'#8b949e',fontSize:12,marginBottom:4,display:'block'}}>Agente Ativo</label>
+ <select value={agentConfig.running?'true':'false'} onChange={e=>setAgentConfig({...agentConfig,running:e.target.value==='true'})}>
+ <option value="true">Rodando</option><option value="false">Pausado</option>
+ </select>
+ </div>
+  <div style={{marginTop:16, borderTop:'1px solid var(--border)', paddingTop:16}}>
+    <label style={{color:'var(--gold)', fontSize:14, fontWeight:700, marginBottom:12, display:'block'}}>
+      ⚙️ MCPs (Canais de Comunicação)
+    </label>
+    {Object.entries(agentConfig.mcps || {}).map(([key, mcp]) => (
+      <div key={key} style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, marginBottom:6}}>
+        <span style={{color:'white', fontSize:13, fontWeight:600}}>{mcp.label || key}</span>
+        <div 
+          onClick={() => {
+            const updated = {
+              ...agentConfig,
+              mcps: {
+                ...agentConfig.mcps,
+                [key]: { ...mcp, enabled: !mcp.enabled }
+              }
+            };
+            setAgentConfig(updated);
+          }}
+          style={{width:44, height:24, borderRadius:12, background:mcp.enabled ? '#22c55e' : '#374151', cursor:'pointer', position:'relative', transition:'background 0.2s'}}
+        >
+          <div style={{width:18, height:18, borderRadius:'50%', background:'white', position:'absolute', top:3, left:mcp.enabled ? 23 : 3, transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,.3)'}}/>
+        </div>
+      </div>
+    ))}
+  </div>
+ <button onClick={()=>saveAgentConfig(agentConfig)} style={{background:'var(--gold)',color:'black',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,fontSize:14,cursor:'pointer',marginTop:8}}>Salvar Configuração</button>
+ </div>
+ </div>
+);
+
+// PARTE 8b — AGENT LOG VIEW
+
+const AgentLogView=()=>(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+ <h3 style={{color:'white',margin:'0 0 16px'}}>Log do Agente — {agentLog.length} registros</h3>
+ {agentLog.length===0?<div style={{textAlign:'center',color:'#30363d',padding:40}}>Nenhuma ação registrada</div>:
+ <div style={{display:'flex',flexDirection:'column',gap:6}}>
+ {agentLog.map((l,i)=>(
+ <div key={l.id||i} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'10px 14px',display:'flex',alignItems:'center',gap:12}}>
+ <span style={{fontSize:11,color:'var(--gold)',fontWeight:600,minWidth:50}}>{l.log_time||'—'}</span>
+ <span style={{fontSize:11,color:'#8b949e',minWidth:80}}>{l.log_date||'—'}</span>
+ <span style={{fontSize:13,color:'white',fontWeight:600,minWidth:120}}>{l.action||'—'}</span>
+ <span style={{fontSize:12,color:'#c9d1d9',flex:1}}>{l.detail||'—'}</span>
+ {l.target&&<span style={{fontSize:11,color:'#58a6ff',background:'rgba(88,166,255,.1)',padding:'2px 8px',borderRadius:6}}>{l.target}</span>}
+ </div>
+ ))}
+ </div>}
+ </div>
+);
+
+// PARTE 8c — ACTIVITY LOG E AGENT VIEW
+
+const ActivityLogView=()=>(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+ <h3 style={{color:'white',margin:'0 0 16px'}}>Atividade — {activityLog.length} registros</h3>
+ {activityLog.length===0?<div style={{textAlign:'center',color:'#30363d',padding:40}}>Nenhuma atividade</div>:
+ <div style={{display:'flex',flexDirection:'column',gap:6}}>
+ {activityLog.map((l,i)=>(
+ <div key={l.id||i} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'10px 14px',display:'flex',alignItems:'center',gap:12}}>
+ <span style={{fontSize:12,color:'var(--gold)',fontWeight:600,minWidth:100}}>{l.type||'—'}</span>
+ <span style={{fontSize:12,color:'#c9d1d9',flex:1}}>{l.description||'—'}</span>
+ <span style={{fontSize:11,color:'#8b949e'}}>{l.log_date||'—'}</span>
+ </div>
+ ))}
+ </div>}
+ </div>
+);
+
+// ── Engine Dashboard ──
+const[engineStatus,setEngineStatus]=useState(null);
+const[engineLogs,setEngineLogs]=useState([]);
+
+const fetchEngineStatus=async()=>{
+  const s=await B.getEngineStatus(); if(s)setEngineStatus(s);
+  const l=await B.getEngineLog(); if(l)setEngineLogs(l);
+};
+
+const EngineDashboard=()=>{
+  useEffect(()=>{fetchEngineStatus();const iv=setInterval(fetchEngineStatus,10000);return()=>clearInterval(iv)},[]);
+  const isOn=engineStatus?.running;
+  const color=isOn?'#3fb950':'#f85149';
+  const label=isOn?'Rodando':'Parado';
+  return(
+    <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+      <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20}}>
+        <div style={{width:14,height:14,borderRadius:'50%',background:color,boxShadow:`0 0 12px ${color}`}}/>
+        <div>
+          <div style={{fontSize:20,fontWeight:800,color:'white'}}>Engenho Autônomo</div>
+          <div style={{fontSize:13,color}}>{label} {engineStatus?.heartbeatCount?`• ${engineStatus.heartbeatCount} heartbeats`:''}</div>
+        </div>
+        <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+          <button onClick={async()=>{await(engineStatus?.running?B.stopEngine():B.startEngine());await fetchEngineStatus()}}
+            style={{background:isOn?'rgba(239,68,68,.15)':'rgba(63,185,80,.15)',color:isOn?'#ef4444':'#3fb950',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>
+            {isOn?'⛔ Parar':'▶️ Iniciar'}
+          </button>
+          <button onClick={fetchEngineStatus} style={{background:'transparent',color:'#8b949e',border:'1px solid var(--border)',padding:'10px 12px',borderRadius:8,fontSize:13,cursor:'pointer'}}>
+            <span className="material-symbols-outlined" style={{fontSize:16}}>refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12,marginBottom:20}}>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+          <div style={{fontSize:11,color:'#8b949e',fontWeight:600}}>STATUS</div>
+          <div style={{fontSize:22,fontWeight:900,color:color,marginTop:4}}>{label}</div>
+          {engineStatus?.startedAt&&<div style={{fontSize:11,color:'#8b949e',marginTop:4}}>Desde: {new Date(engineStatus.startedAt).toLocaleString('pt-BR')}</div>}
+        </div>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+          <div style={{fontSize:11,color:'#8b949e',fontWeight:600}}>HEARTBEATS</div>
+          <div style={{fontSize:22,fontWeight:900,color:'var(--gold)',marginTop:4}}>{engineStatus?.heartbeatCount||0}</div>
+          <div style={{fontSize:11,color:'#8b949e',marginTop:4}}>Intervalo: {(engineStatus?.intervalMs||120000)/1000}s</div>
+        </div>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+          <div style={{fontSize:11,color:'#8b949e',fontWeight:600}}>ÚLTIMO HEARTBEAT</div>
+          <div style={{fontSize:13,fontWeight:600,color:'white',marginTop:4}}>{engineStatus?.lastHeartbeat?new Date(engineStatus.lastHeartbeat).toLocaleTimeString('pt-BR'):'—'}</div>
+        </div>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+          <div style={{fontSize:11,color:'#8b949e',fontWeight:600}}>MCPs ONLINE</div>
+          <div style={{fontSize:13,fontWeight:600,color:'white',marginTop:4}}>
+            {engineStatus?.mcpStatus?Object.entries(engineStatus.mcpStatus).map(([name,s])=>(
+              <div key={name} style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                <span style={{width:8,height:8,borderRadius:'50%',background:s.online?(s.configured?'#3fb950':'#f59e0b'):'#f85149',display:'inline-block'}}/>
+                {name}: {s.online?(s.configured?'OK':'Sem config'):'Offline'}
+              </div>
+            )):'Verificando...'}
+          </div>
+        </div>
+      </div>
+
+      <h3 style={{color:'white',margin:'0 0 12px',fontSize:14}}>📋 Últimas Ações do Motor ({engineLogs.length})</h3>
+      <div style={{display:'flex',flexDirection:'column',gap:4}}>
+        {engineLogs.length===0?<div style={{textAlign:'center',color:'#30363d',padding:20}}>Nenhuma ação do motor ainda</div>:
+        engineLogs.map((l,i)=>(
+          <div key={l.id||i} style={{display:'flex',alignItems:'center',gap:10,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 12px',fontSize:12}}>
+            <span style={{color:'var(--gold)',fontWeight:600,minWidth:50,flexShrink:0}}>{l.log_time||'—'}</span>
+            <span style={{color:'#58a6ff',fontWeight:600,minWidth:100,flexShrink:0}}>{l.action}</span>
+            <span style={{color:'#c9d1d9',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.detail}</span>
+            {l.target&&<span style={{color:'#8b949e',minWidth:80,textAlign:'right',fontSize:11}}>{l.target}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AgentView=()=>{
+  const tabs=[
+  {id:'engine',label:'⚙️ Motor'},
+  {id:'config',label:'Configuração'},
+  {id:'log',label:'Log'},
+  {id:'activity',label:'Atividade'}
+  ];
+  return(
+  <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+  <div style={{display:'flex',gap:4,padding:'12px 24px 0',borderBottom:'1px solid var(--border)'}}>
+  {tabs.map(t=>(
+  <button key={t.id} onClick={()=>setAgentSubView(t.id)} style={{
+  padding:'8px 16px',border:'none',background:'transparent',cursor:'pointer',
+  color:agentSubView===t.id?'var(--gold)':'#8b949e',fontWeight:agentSubView===t.id?700:400,
+  borderBottom:agentSubView===t.id?'2px solid var(--gold)':'2px solid transparent',fontSize:13
+  }}>{t.label}</button>
+  ))}
+  </div>
+  {agentSubView==='engine'&&<EngineDashboard/>}
+  {agentSubView==='config'&&<AgentConfigView/>}
+  {agentSubView==='log'&&<AgentLogView/>}
+  {agentSubView==='activity'&&<ActivityLogView/>}
+  </div>
+  );
+};
+
+// PARTE 9 — CHAT VIEW
+
+const ChatView=()=>{
+ useEffect(()=>{
+ if(chatEndRef.current)chatEndRef.current.scrollIntoView({behavior:'smooth'});
+ },[chatHistory]);
+
+ return(
+ <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden',background:'var(--black)',position:'relative'}}>
+ <div style={{padding:'14px 24px',borderBottom:'1px solid var(--border-subtle)',background:'var(--black)'}}>
+  <h3 style={{color:'var(--gold)',margin:0,fontSize:16,fontWeight:700,letterSpacing:'-.3px'}}>Madalena — Inteligência SDR</h3>
+  <p style={{color:'var(--text-muted)',fontSize:11.5,margin:'3px 0 0',fontWeight:300}}>Converse com a Madalena. Peça para criar leads, mover estágios, gerar relatórios.</p>
+ </div>
+ <div style={{flex:1,overflowY:'auto',padding:'16px 24px 100px 24px',display:'flex',flexDirection:'column',background:'var(--black)'}}>
+ {chatHistory.length===0&&(
+ <div style={{textAlign:'center',color:'var(--border)',padding:40}}>
+ <div style={{fontSize:40,marginBottom:10,opacity:.5}}>🤖</div>
+ <div style={{fontSize:13,color:'var(--text-muted)'}}>Comece uma conversa com o agente</div>
+ <div style={{fontSize:11.5,marginTop:6,color:'var(--text-muted)',opacity:.7}}>
+ Exemplos: "Madalena, quantos leads temos?" • "Crie um lead para João da Silva"
+ </div>
+ </div>
+ )}
+ {chatHistory.map((msg, i) => (
+    <div key={msg.id || i} style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+      marginBottom: 6
+    }}>
+      <div className={`chat-bubble ${msg.role === 'user' ? 'chat-user' : 'chat-agent'}`}>
+        {msg.content}
+      </div>
+      {msg.ts && (
+        <span style={{
+          fontSize: '10px',
+          color: 'var(--text-muted)',
+          margin: '-6px 12px 8px',
+          opacity: 0.6,
+          fontWeight: 500
+        }}>
+          {msg.ts}
+        </span>
+      )}
+    </div>
+  ))}
+ <div ref={chatEndRef}/>
+ </div>
+ <div style={{padding:'20px 24px',background:'linear-gradient(to top, var(--black) 60%, transparent)',position:'absolute',bottom:0,left:0,right:0,zIndex:10}}>
+ <div style={{background:'rgba(10,10,10,.75)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',border:'1px solid var(--border)',borderRadius:'16px',display:'flex',gap:12,alignItems:'flex-end',padding:'12px 16px',boxShadow:'0 10px 40px rgba(0,0,0,0.8)'}}>
+ <textarea ref={chatInputRef}
+ onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}}
+ placeholder="Comando para Madalena..."
+ rows={1}
+ style={{flex:1,background:'transparent',border:'none',color:'var(--text-primary)',resize:'none',lineHeight:1.5,fontSize:'15px',padding:'4px',outline:'none',boxShadow:'none'}}/>
+ <button onClick={sendChat} style={{
+ background:'var(--gold)',color:'var(--black)',border:'none',padding:'10px 20px',
+ borderRadius:'10px',fontWeight:700,fontSize:13,cursor:'pointer',flexShrink:0,transition:'all .2s'
+ }}>Enviar</button>
+ </div>
+ </div>
+ </div>
+ );
+};
+
+// PARTE 10a — PARTNERS VIEW
+
+const PartnersView=()=>(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+ <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+ <h3 style={{color:'white',margin:0}}>Parceiros — {partners.length}</h3>
+ <button onClick={()=>setModal({type:'partner'})} style={{background:'var(--gold)',color:'black',border:'none',padding:'8px 16px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>+ Novo Parceiro</button>
+ </div>
+ {partners.length===0?<div style={{textAlign:'center',color:'#30363d',padding:40}}>Nenhum parceiro cadastrado</div>:
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:12}}>
+ {partners.map(p=>{
+ const pLeads=leads.filter(l=>l.partner_id===p.id);
+ const pWon=pLeads.filter(l=>l.status==='sucesso');
+ const pRevenue=pWon.reduce((a,b)=>a+Number(b.value||0),0);
+ return(
+ <div key={p.id} className="partner-card" onClick={()=>setModal({type:'partner',data:p})}
+ style={{background:'var(--surface)',borderRadius:12,padding:16,borderLeft:'5px solid var(--gold)'}}>
+ <div style={{fontWeight:700,color:'white',fontSize:15}}>{p.name}</div>
+ {p.phone&&<div style={{fontSize:12,color:'#8b949e',marginTop:4}}>📞 {p.phone}</div>}
+ {p.indicator&&<div style={{fontSize:12,color:'#58a6ff',marginTop:2}}>👤 Indicado por: {p.indicator}</div>}
+ <div style={{display:'flex',gap:16,marginTop:12,paddingTop:12,borderTop:'1px solid var(--border)'}}>
+ <div><div style={{fontSize:18,fontWeight:800,color:'var(--gold)'}}>{pLeads.length}</div><div style={{fontSize:10,color:'#8b949e'}}>Leads</div></div>
+ <div><div style={{fontSize:18,fontWeight:800,color:'#3fb950'}}>{pWon.length}</div><div style={{fontSize:10,color:'#8b949e'}}>Ganhos</div></div>
+ <div><div style={{fontSize:18,fontWeight:800,color:'white'}}>{formatKMB(pRevenue)}</div><div style={{fontSize:10,color:'#8b949e'}}>Receita</div></div>
+ </div>
+ </div>
+ );
+ })}
+ </div>}
+ </div>
+);
+
+// PARTE 10b — BI VIEW
+
+const BiCard=({title,value,subtitle,color})=>(
+ <div className="bi-card" style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:14,padding:20,minWidth:180}}>
+ <div style={{fontSize:12,color:'#8b949e',fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px'}}>{title}</div>
+ <div style={{fontSize:28,fontWeight:900,color:color||'white',marginTop:8}}>{value}</div>
+ {subtitle&&<div style={{fontSize:11,color:'#8b949e',marginTop:4}}>{subtitle}</div>}
+ </div>
+);
+
+const BiView=()=>{
+ const won=leads.filter(l=>l.status==='credito_na_tela');
+ const lost=leads.filter(l=>l.status==='perdido_arquivado');
+ const active=leads.filter(l=>!['credito_na_tela','perdido_arquivado'].includes(l.status));
+ const convRate=leads.length>0?((won.length/leads.length)*100).toFixed(1):'0';
+ const avgDeal=won.length>0?formatKMB(won.reduce((a,b)=>a+Number(b.value||0),0)/won.length):'R$ 0';
+ const stalled=active.filter(l=>getDaysInStage(l.last_stage_change)>=STALL_DAYS);
+
+ return(
+ <div style={{padding:'16px 24px',overflowY:'auto',flex:1}}>
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12,marginBottom:24}}>
+ <BiCard title="Receita Total" value={formatKMB(stats.revenue)} subtitle={`${won.length} negócios fechados`} color="#3fb950"/>
+ <BiCard title="Lucro Líquido" value={formatKMB(stats.net)} subtitle="Comissão Maiti" color="var(--gold)"/>
+ <BiCard title="Pipeline Aberto" value={formatKMB(stats.pipe)} subtitle={`${active.length} leads ativos`} color="#3b82f6"/>
+ <BiCard title="Conversão" value={`${convRate}%`} subtitle={`${leads.length} total`} color="#d29922"/>
+ <BiCard title="Ticket Médio" value={avgDeal} subtitle="Por negócio fechado" color="#8b5cf6"/>
+ <BiCard title="Estagnados" value={stalled.length} subtitle={`${STALL_DAYS}+ dias sem mover`} color="#ef4444"/>
+ <BiCard title="Outbound Ativo" value={obLeads.filter(l=>l.status!=='descartado').length} subtitle={`${obLeads.length} total`} color="var(--amber)"/>
+ <BiCard title="Na Geladeira" value={obGeladeira.length} subtitle="Aguardando decisão" color="var(--zombie)"/>
+ <BiCard title="Parceiros" value={partners.length} subtitle="Rede de indicação" color="#58a6ff"/>
+ </div>
+
+ <h3 style={{color:'white',margin:'0 0 12px'}}>Leads por Estágio</h3>
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8,marginBottom:24}}>
+ {stages.map(s=>{
+ const count=leads.filter(l=>l.status===s.id).length;
+ const pct=leads.length>0?((count/leads.length)*100).toFixed(0):0;
+ return(
+ <div key={s.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+ <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
+ <div style={{width:8,height:8,borderRadius:'50%',background:s.color}}/>
+ <div style={{fontSize:11,color:'#8b949e',fontWeight:600}}>{s.title}</div>
+ </div>
+ <div style={{fontSize:24,fontWeight:900,color:'white'}}>{count}</div>
+ <div style={{marginTop:6,height:4,background:'var(--border)',borderRadius:4,overflow:'hidden'}}>
+ <div style={{width:`${pct}%`,height:'100%',background:s.color,borderRadius:4}}/>
+ </div>
+ <div style={{fontSize:10,color:'#8b949e',marginTop:4}}>{pct}%</div>
+ </div>
+ );
+ })}
+ </div>
+
+ {stalled.length>0&&<>
+ <h3 style={{color:'#ef4444',margin:'0 0 12px'}}>Leads Estagnados ({stalled.length})</h3>
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:8}}>
+ {stalled.map(l=>(
+ <div key={l.id} style={{background:'var(--surface)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:12,borderLeft:'4px solid #ef4444'}}>
+ <div style={{fontWeight:700,color:'white'}}>{l.name}</div>
+ <div style={{fontSize:12,color:'#8b949e'}}>{l.company||'—'}</div>
+ <div style={{fontSize:11,color:'#ef4444',marginTop:4}}>Estagnado há {getDaysInStage(l.last_stage_change)} dias — {stages.find(s=>s.id===l.status)?.title||l.status}</div>
+ <div style={{fontSize:12,color:'var(--gold)',marginTop:2}}>{formatKMB(l.value)}</div>
+ </div>
+ ))}
+ </div>
+ </>}
+ </div>
+ );
+};
+
+// PARTE 10c — INDICAÇÕES VIEW
+
+const IndicacoesView=()=>{
+  const[tab,setTab]=useState('lista');
+  const[indFilter,setIndFilter]=useState('all');
+  const[f,setF]=useState({referrer_name:'',referrer_contact:'',referred_name:'',referred_company:'',referred_phone:'',referred_email:'',referred_job:'',message:''});
+
+  const createIndicacao=async()=>{
+    if(!f.referrer_name.trim()||!f.referred_name.trim()){alert('Nome do indicador e do indicado são obrigatórios');return}
+    await B.createIndication(f);
+    setF({referrer_name:'',referrer_contact:'',referred_name:'',referred_company:'',referred_phone:'',referred_email:'',referred_job:'',message:''});
+    await loadData();
+  };
+
+  const convertToLead=async(ind)=>{
+    await B.convertIndication(ind.id);
+    await loadData();
+  };
+
+  const deleteInd=async(id)=>{
+    if(!confirm('Excluir esta indicação?'))return;
+    await B.deleteIndication(id);
+    await loadData();
+  };
+
+  const copyApproach=(ind)=>{
+    const template=`${ind.referred_name}, sou o [Seu Nome] da G5X.
+Estava em contato com o ${ind.referrer_name} e ele mencionou o ritmo das operações da ${ind.referred_company}. Ele sugeriu que falássemos diretamente sobre como estamos acelerando construtoras do seu porte.
+Operamos o GERIC FAST, uma esteira técnica direta na Matriz da Caixa que libera limites de até 5x o seu faturamento anual em até 28 dias, sem o engessamento das agências de varejo.
+Nosso modelo é risco zero: honorários 100% no êxito, pagos apenas com o crédito liberado na tela do seu gerente. Você pode validar a liberação em qualquer agência antes do nosso acerto.
+Como o ${ind.referrer_name} fez a ponte, faz sentido alinharmos 15 minutos para projetarmos seu teto de alavancagem?`;
+    navigator.clipboard.writeText(template).then(()=>alert('✅ Template copiado! Edite [Seu Nome] antes de enviar.'));
+  };
+
+  const filtered=indFilter==='all'?indicacoes:
+    indicacoes.filter(i=>i.status===indFilter);
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+      <div style={{display:'flex',gap:4,padding:'12px 24px 0',borderBottom:'1px solid var(--border)'}}>
+        {[{id:'lista',label:'Lista',icon:'list'},{id:'nova',label:'+ Nova Indicação',icon:'add_circle'},{id:'template',label:'Template Abordagem',icon:'description'}].map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{
+            padding:'8px 14px',border:'none',background:'transparent',cursor:'pointer',
+            color:tab===t.id?'var(--gold)':'#8b949e',fontWeight:tab===t.id?700:400,
+            borderBottom:tab===t.id?'2px solid var(--gold)':'2px solid transparent',fontSize:13
+          }}><span className="material-symbols-outlined" style={{fontSize:16,verticalAlign:'middle',marginRight:4}}>{t.icon}</span>{t.label}</button>
+        ))}
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'16px 24px'}}>
+        {tab==='lista'&&(
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+              <h3 style={{color:'white',margin:0,fontSize:16}}>🔥 Indicações — {indicacoes.length}</h3>
+              <select value={indFilter} onChange={e=>setIndFilter(e.target.value)} style={{width:160,padding:'6px!important',fontSize:12}}>
+                <option value="all">Todas</option>
+                <option value="warm">Quentes</option>
+                <option value="hot">Muito Quentes</option>
+                <option value="cold">Fri as</option>
+                <option value="converted">Convertidas</option>
+              </select>
+            </div>
+            {filtered.length===0?<div style={{textAlign:'center',color:'#30363d',padding:40}}>Nenhuma indicação registrada</div>:
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:12}}>
+              {filtered.map(ind=>{
+                const isConverted=ind.status==='converted';
+                return(
+                  <div key={ind.id} style={{
+                    background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:16,
+                    borderLeft:`5px solid ${isConverted?'#3fb950':ind.status==='hot'?'#f59e0b':'var(--gold)'}`
+                  }}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <div style={{fontWeight:700,color:'white',fontSize:15}}>{ind.referred_name}</div>
+                      {isConverted?<span style={{fontSize:10,background:'rgba(63,185,80,.15)',color:'#3fb950',padding:'2px 8px',borderRadius:6}}>Convertido</span>:
+                        <span style={{fontSize:10,background:'rgba(245,158,11,.15)',color:'#f59e0b',padding:'2px 8px',borderRadius:6}}>{ind.status}</span>}
+                    </div>
+                    <div style={{fontSize:12,color:'#58a6ff',marginTop:4}}>👤 Indicado por: {ind.referrer_name}</div>
+                    <div style={{fontSize:12,color:'#8b949e',marginTop:2}}>{ind.referred_company||'—'} • {ind.referred_job||'—'}</div>
+                    {(ind.referred_phone||ind.referred_email)&&(
+                      <div style={{fontSize:11,color:'#8b949e',marginTop:4}}>
+                        {ind.referred_phone&&<span>📞 {ind.referred_phone} </span>}
+                        {ind.referred_email&&<span>✉️ {ind.referred_email}</span>}
+                      </div>
+                    )}
+                    {ind.message&&<div style={{fontSize:12,color:'#c9d1d9',marginTop:6,background:'rgba(255,255,255,.03)',padding:8,borderRadius:6}}>💬 {ind.message}</div>}
+                    <div style={{display:'flex',gap:6,marginTop:12}}>
+                      {!isConverted&&<button onClick={()=>convertToLead(ind)}
+                        style={{background:'var(--gold)',color:'black',border:'none',padding:'6px 12px',borderRadius:6,fontWeight:700,fontSize:11,cursor:'pointer'}}>➕ Converter em Lead</button>}
+                      <button onClick={()=>copyApproach(ind)}
+                        style={{background:'rgba(59,130,246,.15)',color:'#3b82f6',border:'none',padding:'6px 12px',borderRadius:6,fontSize:11,cursor:'pointer'}}>📋 Template</button>
+                      {!isConverted&&<button onClick={()=>deleteInd(ind.id)}
+                        style={{background:'rgba(239,68,68,.15)',color:'#ef4444',border:'none',padding:'6px 10px',borderRadius:6,fontSize:11,cursor:'pointer'}}>🗑️</button>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>}
+          </div>
+        )}
+        {tab==='nova'&&(
+          <div style={{maxWidth:500}}>
+            <h3 style={{color:'var(--amber)',margin:'0 0 8px',fontSize:16}}>🔥 Nova Indicação Quente</h3>
+            <p style={{color:'#8b949e',fontSize:12,marginBottom:16}}>Preencha os dados. Ao salvar, o lead será alocado na aba "Indicações Quentes" com abordagem direta — sem automações.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{background:'rgba(245,158,11,.08)',border:'1px solid rgba(245,158,11,.2)',borderRadius:10,padding:12,marginBottom:8}}>
+                <div style={{fontSize:12,color:'var(--amber)',fontWeight:600,marginBottom:4}}>👤 Dados do Indicador</div>
+                <input value={f.referrer_name} onChange={e=>setF({...f,referrer_name:e.target.value})} placeholder="Nome do Indicador *" style={{marginBottom:6}}/>
+                <input value={f.referrer_contact} onChange={e=>setF({...f,referrer_contact:e.target.value})} placeholder="Contato do Indicador (telefone/email)"/>
+              </div>
+              <div style={{background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:10,padding:12,marginBottom:8}}>
+                <div style={{fontSize:12,color:'#3b82f6',fontWeight:600,marginBottom:4}}>🏗️ Dados da Construtora Indicada</div>
+                <input value={f.referred_name} onChange={e=>setF({...f,referred_name:e.target.value})} placeholder="Nome do Indicado *" style={{marginBottom:6}}/>
+                <input value={f.referred_company} onChange={e=>setF({...f,referred_company:e.target.value})} placeholder="Fantasia da Construtora *" style={{marginBottom:6}}/>
+                <input value={f.referred_phone} onChange={e=>setF({...f,referred_phone:e.target.value})} placeholder="Telefone" style={{marginBottom:6}}/>
+                <input value={f.referred_email} onChange={e=>setF({...f,referred_email:e.target.value})} placeholder="Email" style={{marginBottom:6}}/>
+                <input value={f.referred_job} onChange={e=>setF({...f,referred_job:e.target.value})} placeholder="Cargo"/>
+              </div>
+              <textarea value={f.message} onChange={e=>setF({...f,message:e.target.value})} placeholder="Contexto / Mensagem do Indicador (ex: 'O João precisa de crédito para 3 obras este ano')" rows={3}/>
+              <button onClick={createIndicacao} style={{background:'var(--amber)',color:'black',border:'none',padding:'12px',borderRadius:8,fontWeight:800,fontSize:14,cursor:'pointer'}}>
+                🔥 Registrar Indicação Quente
+              </button>
+            </div>
+          </div>
+        )}
+        {tab==='template'&&(
+          <div style={{maxWidth:700}}>
+            <h3 style={{color:'var(--amber)',margin:'0 0 8px',fontSize:16}}>📋 Modelo Padrão: Abordagem de Indicação</h3>
+            <p style={{color:'#8b949e',fontSize:12,marginBottom:12}}>
+              Tom: <strong style={{color:'var(--gold)'}}>Parceiro Afiado</strong> (Direto, executivo, focado em escala).
+              Use <strong style={{color:'var(--amber)'}}>Autoridade Emprestada</strong> do indicador.
+            </p>
+            <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:20,marginBottom:12,fontSize:14,lineHeight:1.7,color:'#c9d1d9'}}>
+              <p style={{margin:'0 0 12px'}}>"<strong>[Nome do Lead]</strong>, sou o <strong>[Seu Nome]</strong> da G5X.</p>
+              <p style={{margin:'0 0 12px'}}>Estava em contato com o <strong>[Nome do Indicador]</strong> e ele mencionou o ritmo das operações da <strong>[Fantasia]</strong>. Ele sugeriu que falássemos diretamente sobre como estamos acelerando construtoras do seu porte.</p>
+              <p style={{margin:'0 0 12px'}}>Operamos o <strong>GERIC FAST</strong>, uma esteira técnica direta na Matriz da Caixa que libera limites de até <strong>5x o seu faturamento anual em até 28 dias</strong>, sem o engessamento das agências de varejo.</p>
+              <p style={{margin:'0 0 12px'}}>Nosso modelo é <strong>risco zero</strong>: honorários 100% no êxito, pagos apenas com o crédito liberado na tela do seu gerente. Você pode validar a liberação em qualquer agência antes do nosso acerto.</p>
+              <p style={{margin:0}}>Como o <strong>[Nome do Indicador]</strong> fez a ponte, faz sentido alinharmos 15 minutos para projetarmos seu teto de alavancagem?"</p>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>navigator.clipboard.writeText(document.querySelector('.approach-template-text')?.innerText||'')}
+                style={{background:'var(--gold)',color:'black',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>📋 Copiar Template</button>
+              <div style={{fontSize:11,color:'#8b949e',alignSelf:'center'}}>Cole no WhatsApp/Email e edite os campos entre [ ]</div>
+            </div>
+            <div className="approach-template-text" style={{display:'none'}}>
+              [Nome do Lead], sou o [Seu Nome] da G5X. Estava em contato com o [Nome do Indicador] e ele mencionou o ritmo das operações da [Fantasia]. Ele sugeriu que falássemos diretamente sobre como estamos acelerando construtoras do seu porte. Operamos o GERIC FAST, uma esteira técnica direta na Matriz da Caixa que libera limites de até 5x o seu faturamento anual em até 28 dias, sem o engessamento das agências de varejo. Nosso modelo é risco zero: honorários 100% no êxito, pagos apenas com o crédito liberado na tela do seu gerente. Você pode validar a liberação em qualquer agência antes do nosso acerto. Como o [Nome do Indicador] fez a ponte, faz sentido alinharmos 15 minutos para projetarmos seu teto de alavancagem?
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── MODAIS DO PIPELINE ÚNICO ──
+
+const ApproachTemplateModal=({lead})=>{
+  const ehIndicacao=isIndicacao(lead);
+  const indicador=lead.indicacao_origem?.indicador||'[Nome do Indicador]';
+  const construtora=lead.company||'[Fantasia]';
+  const nome=lead.name||'[Nome do Lead]';
+
+  const template=`${nome}, sou o [Seu Nome] da G5X.
+Estava em contato com o ${indicador} e ele mencionou o ritmo das operações da ${construtora}. Ele sugeriu que falássemos diretamente sobre como estamos acelerando construtoras do seu porte.
+Operamos o GERIC FAST, uma esteira técnica direta na Matriz da Caixa que libera limites de até 5x o seu faturamento anual em até 28 dias, sem o engessamento das agências de varejo.
+Nosso modelo é risco zero: honorários 100% no êxito, pagos apenas com o crédito liberado na tela do seu gerente. Você pode validar a liberação em qualquer agência antes do nosso acerto.
+Como o ${indicador} fez a ponte, faz sentido alinharmos 15 minutos para projetarmos seu teto de alavancagem?`;
+
+  return(
+    <Modal onClose={()=>setModal({type:null})}>
+      <h3 style={{color:'var(--amber)',margin:'0 0 12px',fontSize:16}}>📋 Abordagem de Indicação</h3>
+      <p style={{color:'#8b949e',fontSize:12,marginBottom:12}}>
+        {ehIndicacao?'✅ Lead é uma indicação. Use autoridade emprestada do indicador.':
+        'ℹ️ Este não é um lead de indicação. O template foi adaptado.'}
+      </p>
+      <div style={{background:'rgba(0,0,0,.3)',borderRadius:10,padding:16,marginBottom:12,maxHeight:400,overflowY:'auto',fontSize:13,lineHeight:1.6,color:'#c9d1d9',whiteSpace:'pre-wrap'}}>
+        {template.split('\n').map((p,i)=><p key={i} style={{margin:'0 0 8px'}}>{p}</p>)}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={()=>{navigator.clipboard.writeText(template);alert('✅ Copiado!')}}
+          style={{background:'var(--gold)',color:'black',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer',flex:1}}>📋 Copiar Template</button>
+        {lead.phone&&<button onClick={()=>{B.openWhatsApp(lead.phone,encodeURIComponent(template))}}
+          style={{background:'#25D366',color:'white',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer'}}>📱 WhatsApp</button>}
+      </div>
+    </Modal>
+  );
+};
+
+const StageMoveModal=({data:{lead,newStage,stageInfo,camposNeeded,msg}})=>{
+  const[obs,setObs]=useState('');
+  const[campos,setCampos]=useState({});
+
+  const confirmMove=async()=>{
+    await B.moveLeadStage(lead.id,newStage);
+    // Salvar observação nos metadados do lead
+    if(obs.trim()){
+      await B.updateLead(lead.id,{
+        last_obs:obs,
+        stage_entered_at:new Date().toISOString(),
+        ...camposNeeded.reduce((acc,k)=>{acc[`campos_${k}`]=campos[k]||'';return acc},{})
+      });
+    }
+    await loadData();
+    setModal({type:null});
+  };
+
+  return(
+    <Modal onClose={()=>setModal({type:null})}>
+      <h3 style={{color:'var(--gold)',margin:'0 0 8px',fontSize:16}}>
+        Mover para <span style={{color:stageInfo.color}}>{stageInfo.title}</span>
+      </h3>
+      <p style={{color:'#8b949e',fontSize:13,marginBottom:16}}>
+        <strong>{lead.name}</strong> — {lead.company}
+      </p>
+      {camposNeeded.length>0&&(
+        <div style={{background:'rgba(197,160,89,.08)',border:'1px solid rgba(197,160,89,.2)',borderRadius:10,padding:14,marginBottom:12}}>
+          <div style={{fontSize:12,color:'var(--gold)',fontWeight:600,marginBottom:8}}>📋 Campos necessários para {stageInfo.title}:</div>
+          {camposNeeded.map(c=>(
+            <div key={c} style={{marginBottom:6}}>
+              <label style={{fontSize:11,color:'#8b949e',display:'block',marginBottom:2}}>{c}</label>
+              <input value={campos[c]||''} onChange={e=>setCampos({...campos,[c]:e.target.value})}
+                placeholder={c} style={{padding:'8px!important',fontSize:12}}/>
+            </div>
+          ))}
+        </div>
+      )}
+      <textarea value={obs} onChange={e=>setObs(e.target.value)}
+        placeholder="Observação sobre esta movimentação..." rows={2}
+        style={{marginBottom:12}}/>
+      {msg&&<p style={{fontSize:12,color:'#8b949e',marginBottom:12}}>💡 {msg}</p>}
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={()=>setModal({type:null})}
+          style={{background:'transparent',color:'#8b949e',border:'1px solid var(--border)',padding:'10px 20px',borderRadius:8,fontSize:13,cursor:'pointer'}}>Cancelar</button>
+        <button onClick={confirmMove}
+          style={{background:stageInfo.color,color:'white',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer',flex:1}}>
+          ✅ Mover para {stageInfo.title}
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
+const OutputProtocolModal=()=>{
+  const protoInfo={
+    'rota_fria':{
+      titulo:'❄️ Rota Fria (Automação)',
+      rota:'Cadência Automatizada (10 Toques: 5 E-mails + 5 WhatsApps)',
+      tag:'#frio',
+      cor:'#3b82f6',
+      acao:'Disparar cadência automática',
+      gatilho:'Lead frio importado ou cadastrado manualmente',
+      abordagem:'Sequencial via cadência. Contato síncrono apenas após engajamento.'
+    },
+    [ORIGEM_INDICACAO]:{
+      titulo:'🔥 Rota Quente (Indicação)',
+      rota:'Abordagem Direta — Contato Síncrono',
+      tag:'#'+ORIGEM_INDICACAO,
+      cor:'#f59e0b',
+      acao:'Bloquear automações. Gerar Apresentação Direta.',
+      gatilho:'Indicação recebida com Nome do Indicador + Fantasia da Construtora',
+      abordagem:`Template exclusivo com Autoridade Emprestada do indicador.\n"Como o [Indicador] fez a ponte, faz sentido alinharmos 15 minutos..."`
+    }
+  };
+
+  return(
+    <Modal onClose={()=>setModal({type:null})}>
+      <h3 style={{color:'var(--gold)',margin:'0 0 16px',fontSize:16}}>🚀 Protocolo de Saída — Pipeline Único G5X</h3>
+      {Object.entries(protoInfo).map(([key,p])=>(
+        <div key={key} style={{
+          background:'rgba(0,0,0,.2)',border:`1px solid ${p.cor}33`,borderRadius:12,
+          padding:16,marginBottom:12,borderLeft:`4px solid ${p.cor}`
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <span style={{background:p.cor,color:'white',padding:'2px 10px',borderRadius:6,fontWeight:700,fontSize:11}}>{p.tag}</span>
+            <span style={{color:'white',fontWeight:700,fontSize:14}}>{p.titulo}</span>
+          </div>
+          <div style={{fontSize:12,color:'#c9d1d9',lineHeight:1.6}}>
+            <div><strong style={{color:p.cor}}>Rota:</strong> {p.rota}</div>
+            <div><strong style={{color:p.cor}}>Ação:</strong> {p.acao}</div>
+            <div><strong style={{color:p.cor}}>Gatilho:</strong> {p.gatilho}</div>
+            <div style={{marginTop:4,background:'rgba(0,0,0,.2)',padding:8,borderRadius:6}}>
+              <strong style={{color:p.cor}}>Abordagem:</strong> {p.abordagem}
+            </div>
+          </div>
+        </div>
+      ))}
+      <div style={{background:'rgba(245,158,11,.08)',border:'1px solid rgba(245,158,11,.2)',borderRadius:10,padding:14,marginTop:8}}>
+        <div style={{fontSize:13,color:'var(--amber)',fontWeight:700,marginBottom:4}}>⚠️ Diretrizes de Negociação (Voss/Dixon/Rackham)</div>
+        <ul style={{fontSize:12,color:'#c9d1d9',margin:0,paddingLeft:16,lineHeight:1.8}}>
+          <li><strong style={{color:'#ef4444'}}>Sem jargões:</strong> Proibido "Funding" ou "Recurso Disponível". Use "Limite de Crédito" e "Crédito na Tela".</li>
+          <li><strong style={{color:'#3b82f6'}}>Perguntas Calibradas:</strong> Prefira "Como" e "O quê". Ex: "Como você planeja rodar as obras previstas se o banco continuar limitando seu teto?"</li>
+          <li><strong style={{color:'var(--amber)'}}>Autoridade Emprestada:</strong> Em indicações, a palavra do indicador vale mais que qualquer slide. Use-a como âncora.</li>
+        </ul>
+      </div>
+    </Modal>
+  );
+};
+
+// PARTE 10d — MODAL WRAPPER
+
+const Modal=({children,onClose})=>(
+ <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.8)',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)'}}>
+ <div onClick={e=>e.stopPropagation()} className="glass animate-in" style={{borderRadius:14,maxHeight:'90vh',overflowY:'auto',minWidth:380,maxWidth:680,width:'90%'}}>
+ <div style={{display:'flex',justifyContent:'flex-end',padding:'10px 14px 0'}}>
+ <button onClick={onClose} style={{background:'transparent',border:'none',color:'var(--text-muted)',cursor:'pointer',fontSize:18,transition:'color .15s'}}>✕</button>
+ </div>
+ <div style={{padding:'0 20px 20px'}}>{children}</div>
+ </div>
+ </div>
+);
+
+// PARTE 10d — NEW LEAD MODAL
+
+const NewLeadModal=()=>{
+ const[f,setF]=useState({name:'',company:'',phone:'',email:'',linkedin_url:'',value:'',main_pain:'',job_title:'',partner_id:'',source:'manual',indicador_origem:''});
+ const save=async()=>{
+ if(!f.name.trim()){alert('Nome é obrigatório');return}
+ const leadData={...f,value:parseMoney(f.value)};
+ if(f.source===ORIGEM_INDICACAO&&f.indicador_origem.trim()){
+   leadData.indicacao_origem={indicador:f.indicador_origem,data:new Date().toISOString()};
+ }
+ delete leadData.indicador_origem;
+ await saveLead(leadData);
+ setModal({type:null});
+ };
+ return(
+ <Modal onClose={()=>setModal({type:null})}>
+ <h3 style={{color:'white',margin:'0 0 16px'}}>Novo Lead — Pipeline Único G5X</h3>
+ <div style={{display:'flex',flexDirection:'column',gap:10}}>
+ <div style={{display:'flex',gap:8}}>
+   <button onClick={()=>setF({...f,source:'manual',indicador_origem:''})}
+     style={{flex:1,padding:'8px',borderRadius:8,border:f.source==='manual'?'2px solid #3b82f6':'1px solid var(--border)',
+       background:f.source==='manual'?'rgba(59,130,246,.1)':'transparent',
+       color:f.source==='manual'?'#3b82f6':'#8b949e',fontWeight:700,fontSize:12,cursor:'pointer'}}>
+     ❄️ Frio (Manual)
+   </button>
+   <button onClick={()=>setF({...f,source:'import',indicador_origem:''})}
+     style={{flex:1,padding:'8px',borderRadius:8,border:f.source==='import'?'2px solid #8b5cf6':'1px solid var(--border)',
+       background:f.source==='import'?'rgba(139,92,246,.1)':'transparent',
+       color:f.source==='import'?'#8b5cf6':'#8b949e',fontWeight:700,fontSize:12,cursor:'pointer'}}>
+     📥 Frio (Import)
+   </button>
+   <button onClick={()=>setF({...f,source:ORIGEM_INDICACAO})}
+     style={{flex:1,padding:'8px',borderRadius:8,border:f.source===ORIGEM_INDICACAO?'2px solid var(--amber)':'1px solid var(--border)',
+       background:f.source===ORIGEM_INDICACAO?'rgba(245,158,11,.1)':'transparent',
+       color:f.source===ORIGEM_INDICACAO?'var(--amber)':'#8b949e',fontWeight:700,fontSize:12,cursor:'pointer'}}>
+     🔥 Indicação (Quente)
+   </button>
+ </div>
+ <input value={f.name} onChange={e=>setF({...f,name:e.target.value})} placeholder="Nome *"/>
+ <input value={f.company} onChange={e=>setF({...f,company:e.target.value})} placeholder="Empresa"/>
+ <input value={f.job_title} onChange={e=>setF({...f,job_title:e.target.value})} placeholder="Cargo"/>
+ <input value={f.phone} onChange={e=>setF({...f,phone:e.target.value})} placeholder="Telefone"/>
+ <input value={f.email} onChange={e=>setF({...f,email:e.target.value})} placeholder="Email"/>
+ <input value={f.linkedin_url} onChange={e=>setF({...f,linkedin_url:e.target.value})} placeholder="LinkedIn URL"/>
+ <input value={f.value} onChange={e=>setF({...f,value:e.target.value})} placeholder="Valor (ex: 50k, 1.5M)"/>
+ <input value={f.main_pain} onChange={e=>setF({...f,main_pain:e.target.value})} placeholder="Dor principal"/>
+ <select value={f.partner_id} onChange={e=>setF({...f,partner_id:e.target.value})}>
+ <option value="">Sem parceiro</option>
+ {partners.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+ </select>
+ {f.source===ORIGEM_INDICACAO&&(
+   <input value={f.indicador_origem} onChange={e=>setF({...f,indicador_origem:e.target.value})}
+     placeholder="Nome do Indicador (obrigatório para indicações)"/>
+ )}
+ <button onClick={save} style={{background:'var(--gold)',color:'black',border:'none',padding:'10px',borderRadius:8,fontWeight:700,fontSize:14,cursor:'pointer'}}>
+   {f.source===ORIGEM_INDICACAO?'🔥 Criar Lead (Indicação)':`❄️ Criar Lead (${f.source})`}
+ </button>
+ </div>
+ </Modal>
+ );
+};
+
+// PARTE 10e — LEAD DETAIL MODAL
+
+const LeadDetailModal=({lead})=>{
+ const[tab,setTab]=useState('info');
+ const leadActions=actions.filter(a=>a.lead_id===lead.id);
+ const partner=partners.find(p=>p.id===lead.partner_id);
+ const days=getDaysInStage(lead.last_stage_change);
+ const[taskTitle,setTaskTitle]=useState('');
+ const[taskDate,setTaskDate]=useState('');
+ const rotaInfo=getRotaInfo(lead);
+
+ const addTask=async()=>{
+ if(!taskTitle.trim())return;
+ await saveTask({lead_id:lead.id,title:taskTitle,due_date:taskDate||null});
+ setTaskTitle('');
+ setTaskDate('');
+ };
+
+ return(
+ <Modal onClose={()=>setModal({type:null})}>
+ <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+ <div style={{width:40,height:40,borderRadius:10,background:'var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,color:'black',fontSize:16}}>
+ {lead.name?.charAt(0)||'?'}
+ </div>
+ <div>
+ <div style={{fontWeight:800,color:'white',fontSize:18}}>{lead.name}</div>
+ <div style={{fontSize:12,color:'#8b949e'}}>{lead.company||'—'} {lead.job_title?`• ${lead.job_title}`:''}</div>
+ </div>
+ <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+ {lead.phone&&<button onClick={()=>openWA(lead.phone)} style={{background:'#25D366',color:'white',border:'none',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>📱</button>}
+ {lead.email&&<button onClick={()=>window.open(`mailto:${lead.email}`)} style={{background:'#3b82f6',color:'white',border:'none',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>📧</button>}
+ <button onClick={()=>addToOutbound(lead)} style={{background:'rgba(245,158,11,.2)',color:'var(--amber)',border:'1px solid rgba(245,158,11,.3)',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>🚀 Outbound</button>
+ </div>
+ </div>
+ <div style={{display:'flex',gap:4,marginBottom:16,borderBottom:'1px solid var(--border)',paddingBottom:8}}>
+  {[{id:'info',label:'Info'},{id:'tasks',label:'Tarefas'},{id:'schedule',label:'Agendar'},{id:'move',label:'Mover'}].map(t=>(
+ <button key={t.id} onClick={()=>setTab(t.id)} style={{background:'transparent',border:'none',color:tab===t.id?'var(--gold)':'#8b949e',fontWeight:tab===t.id?700:400,cursor:'pointer',padding:'4px 12px',fontSize:13}}>{t.label}</button>
+ ))}
+ </div>
+  {tab==='info'&&(
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+  <div style={{gridColumn:'1/-1'}}>
+    <OutputProtocolBadge lead={lead}/>
+  </div>
+  <div><span style={{fontSize:11,color:'#8b949e'}}>Telefone</span><div style={{color:'white'}}>{lead.phone||'—'}</div></div>
+  <div><span style={{fontSize:11,color:'#8b949e'}}>Email</span><div style={{color:'white'}}>{lead.email||'—'}</div></div>
+  <div><span style={{fontSize:11,color:'#8b949e'}}>LinkedIn</span><div style={{color:'white'}}>{lead.linkedin_url?<a href={lead.linkedin_url} target="_blank" style={{color:'#58a6ff'}}>Perfil</a>:'—'}</div></div>
+  <div><span style={{fontSize:11,color:'#8b949e'}}>Valor</span><div style={{color:'var(--gold)',fontWeight:700}}>{formatKMB(lead.value)}</div></div>
+  <div><span style={{fontSize:11,color:'#8b949e'}}>Parceiro</span><div style={{color:'#58a6ff'}}>{partner?.name||'—'}</div></div>
+  <div><span style={{fontSize:11,color:'#8b949e'}}>Estágio</span><div style={{color:'white'}}>{stages.find(s=>s.id===lead.status)?.title||lead.status} ({days}d)</div></div>
+  {lead.indicacao_origem?.indicador&&(
+    <div style={{gridColumn:'1/-1'}}>
+      <span style={{fontSize:11,color:'#8b949e'}}>Indicado por</span>
+      <div style={{color:'var(--amber)',fontWeight:600}}>👤 {lead.indicacao_origem.indicador}</div>
+    </div>
+  )}
+  {lead.calendly_link&&(
+    <div style={{gridColumn:'1/-1'}}>
+      <span style={{fontSize:11,color:'#8b949e'}}>Link de Agendamento</span>
+      <div><a href={lead.calendly_link} target="_blank" style={{color:'#58a6ff',fontSize:12}}>{lead.calendly_link}</a></div>
+    </div>
+  )}
+  <div style={{gridColumn:'1/-1'}}><span style={{fontSize:11,color:'#8b949e'}}>Dor Principal</span><div style={{color:'white'}}>{lead.main_pain||'—'}</div></div>
+  </div>
+  )}
+ {tab==='tasks'&&(
+ <div>
+ <div style={{display:'flex',gap:8,marginBottom:12}}>
+ <input value={taskTitle} onChange={e=>setTaskTitle(e.target.value)} placeholder="Nova tarefa..." style={{flex:1}}/>
+ <input type="date" value={taskDate} onChange={e=>setTaskDate(e.target.value)} style={{width:140}}/>
+ <button onClick={addTask} style={{background:'var(--gold)',color:'black',border:'none',padding:'8px 14px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>+</button>
+ </div>
+ {leadActions.length===0?<div style={{textAlign:'center',color:'#30363d',padding:20}}>Nenhuma tarefa</div>:
+ leadActions.map(a=>(
+ <div key={a.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:'1px solid var(--border)'}}>
+ <input type="checkbox" checked={a.done} onChange={()=>toggleTask(a)} style={{width:18,height:18,cursor:'pointer'}}/>
+ <span style={{flex:1,color:a.done?'#8b949e':'white',textDecoration:a.done?'line-through':'none',fontSize:13}}>{a.title}</span>
+ <span style={{fontSize:11,color:'#8b949e'}}>{fmtDate(a.due_date)}</span>
+ </div>
+ ))}
+ </div>
+ )}
+  {tab==='schedule'&&(
+    <div>
+      <h4 style={{color:'var(--amber)',margin:'0 0 12px',fontSize:14}}>📅 Agendar Diagnóstico</h4>
+      <p style={{color:'#8b949e',fontSize:12,marginBottom:12}}>
+        Gere um link do Calendly para o lead agendar a Call de Diagnóstico de 15min.
+      </p>
+      {lead.calendly_link?(
+        <div style={{background:'rgba(63,185,80,.08)',border:'1px solid rgba(63,185,80,.2)',borderRadius:10,padding:14,marginBottom:12}}>
+          <div style={{fontSize:12,color:'#3fb950',fontWeight:600,marginBottom:4}}>✅ Link já gerado</div>
+          <a href={lead.calendly_link} target="_blank" style={{color:'#58a6ff',fontSize:13}}>{lead.calendly_link}</a>
+          <div style={{fontSize:11,color:'#8b949e',marginTop:4}}>Gerado em: {lead.scheduled_at?new Date(lead.scheduled_at).toLocaleString('pt-BR'):'—'}</div>
+          <button onClick={()=>{navigator.clipboard.writeText(lead.calendly_link);alert('✅ Link copiado!')}}
+            style={{marginTop:8,background:'rgba(59,130,246,.15)',color:'#3b82f6',border:'none',padding:'6px 12px',borderRadius:6,fontSize:12,cursor:'pointer'}}>📋 Copiar Link</button>
+        </div>
+      ):(
+        <div style={{background:'rgba(245,158,11,.08)',border:'1px solid rgba(245,158,11,.2)',borderRadius:10,padding:14,marginBottom:12}}>
+          <div style={{fontSize:12,color:'var(--amber)',fontWeight:600,marginBottom:8}}>Disponibilidade do Closer:</div>
+          <div style={{fontSize:12,color:'#c9d1d9',marginBottom:12}}>
+            Seg-Sex • 09:00-12:00 • 14:00-17:00 (America/Sao_Paulo)
+          </div>
+        </div>
+      )}
+      <div style={{display:'flex',gap:8}}>
+        <button onClick={async()=>{
+          const resp=await B.createSchedulingLink({lead_id:lead.id,lead_name:lead.name,lead_email:lead.email});
+          if(resp&&resp.scheduling_url){
+            lead.calendly_link=resp.scheduling_url;
+            lead.scheduled_at=new Date().toISOString();
+            alert('✅ Link gerado! Compartilhe com o lead.');
+            await loadData();
+          }else{
+            alert('❌ Erro ao gerar link. Verifique se o Calendly está configurado.');
+          }
+        }}
+          style={{background:'var(--amber)',color:'black',border:'none',padding:'10px 16px',borderRadius:8,fontWeight:700,fontSize:13,cursor:'pointer',flex:1}}>
+          🔗 Gerar Link de Agendamento
+        </button>
+        {lead.phone&&<button onClick={()=>{
+          B.openWhatsApp(lead.phone,`Olá ${lead.name}, tudo bem? Segue link para agendarmos um diagnóstico rápido de 15min: ${lead.calendly_link||'[link]'}`)
+        }} style={{background:'#25D366',color:'white',border:'none',padding:'10px',borderRadius:8,fontSize:13,cursor:'pointer'}}>📱</button>}
+      </div>
+    </div>
+  )}
+  {tab==='move'&&(
+  <div style={{display:'flex',flexDirection:'column',gap:6}}>
+  {G5X_STAGES.map(s=>(
+  <button key={s.id} onClick={()=>{
+    setModal({type:'stageMove',data:{lead,newStage:s.id,stageInfo:s,camposNeeded:[],msg:''}});
+  }}
+  disabled={s.id===lead.status}
+  style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderRadius:10,border:s.id===lead.status?'2px solid var(--gold)':'1px solid var(--border)',background:s.id===lead.status?'rgba(197,160,89,.1)':'transparent',color:s.id===lead.status?'var(--gold)':'#8b949e',cursor:s.id===lead.status?'default':'pointer',fontWeight:s.id===lead.status?700:400,fontSize:13}}>
+  <div style={{width:10,height:10,borderRadius:'50%',background:s.color}}/>
+  {s.title}
+  {s.id===lead.status&&<span style={{marginLeft:'auto',fontSize:11}}>← Atual</span>}
+  </button>
+  ))}
+  </div>
+  )}
+ </Modal>
+ );
+};
+
+// PARTE 10f — PARTNER MODAL
+
+const PartnerModal=({partner})=>{
+ const[f,setF]=useState(partner||{name:'',phone:'',comm_value:'',obs:'',indicator:''});
+ const save=async()=>{
+ if(!f.name.trim()){alert('Nome é obrigatório');return}
+ await savePartner({...f,comm_value:parseMoney(f.comm_value)});
+ setModal({type:null});
+ };
+ return(
+ <Modal onClose={()=>setModal({type:null})}>
+ <h3 style={{color:'white',margin:'0 0 16px'}}>{partner?.id?'Editar':'Novo'} Parceiro</h3>
+ <div style={{display:'flex',flexDirection:'column',gap:10}}>
+ <input value={f.name||''} onChange={e=>setF({...f,name:e.target.value})} placeholder="Nome *"/>
+ <input value={f.phone||''} onChange={e=>setF({...f,phone:e.target.value})} placeholder="Telefone"/>
+ <input value={f.comm_value||''} onChange={e=>setF({...f,comm_value:e.target.value})} placeholder="Comissão (ex: 10k, 5%)"/>
+ <input value={f.indicator||''} onChange={e=>setF({...f,indicator:e.target.value})} placeholder="Indicado por"/>
+ <textarea value={f.obs||''} onChange={e=>setF({...f,obs:e.target.value})} placeholder="Observações" rows={3}/>
+ <div style={{display:'flex',gap:8}}>
+ {partner?.id&&<button onClick={async()=>{await deletePartner(partner.id)}} style={{background:'rgba(239,68,68,.15)',color:'#ef4444',border:'none',padding:'10px',borderRadius:8,fontWeight:600,cursor:'pointer'}}>Excluir</button>}
+ <div style={{flex:1}}/>
+ <button onClick={()=>setModal({type:null})} style={{background:'transparent',color:'#8b949e',border:'1px solid var(--border)',padding:'10px 20px',borderRadius:8,cursor:'pointer'}}>Cancelar</button>
+ <button onClick={save} style={{background:'var(--gold)',color:'black',border:'none',padding:'10px 20px',borderRadius:8,fontWeight:700,cursor:'pointer'}}>Salvar</button>
+ </div>
+ </div>
+ </Modal>
+ );
+};
+
+// PARTE 10g — OB LEAD DETAIL MODAL
+
+const ObDetailModal=({ol})=>{
+ const {setModal,togglePauseOb}=stateRef.current;
+ const[history,setHistory]=useState([]);
+ const[commLog,setCommLog]=useState([]);
+ const[loading,setLoading]=useState(true);
+ const[replyMsg,setReplyMsg]=useState('');
+ const[replyChannel,setReplyChannel]=useState(ol.channel||'whatsapp');
+
+ const loadDataObj = async()=>{
+ const[hist,comm]=await Promise.all([
+ B.getObHistory(ol.id),
+ B.getCommLog({ob_lead_id:ol.id})
+ ]);
+ setHistory(hist||[]);
+ setCommLog(comm||[]);
+ setLoading(false);
+ };
+
+ useEffect(()=>{
+ loadDataObj();
+ },[ol.id]);
+
+ const sendReply=async()=>{
+ if(!replyMsg.trim())return;
+ await B.sendMessage({
+ channel:replyChannel,ob_lead_id:ol.id,
+ phone:ol.phone,email:ol.email,message:replyMsg,
+ subject:`Re: ${ol.company||'Proposta'}`
+ });
+ setReplyMsg('');
+ const[hist,comm]=await Promise.all([B.getObHistory(ol.id),B.getCommLog({ob_lead_id:ol.id})]);
+ setHistory(hist||[]);
+ setCommLog(comm||[]);
+ };
+
+ const simulateReply = async () => {
+   setLoading(true);
+   await B.replyObLead(ol.id);
+   await stateRef.current.loadData();
+   setModal({ type: null });
+ };
+
+ const manualMigrate = async () => {
+   setLoading(true);
+   await B.migrateObLead(ol.id);
+   await stateRef.current.loadData();
+   setModal({ type: null });
+ };
+
+ return(
+ <Modal onClose={()=>setModal({type:null})}>
+ <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+ <div style={{width:40,height:40,borderRadius:10,background:'var(--amber)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,color:'black',fontSize:16}}>
+ {ol.name?.charAt(0)||'?'}
+ </div>
+ <div>
+ <div style={{fontWeight:800,color:'white',fontSize:18}}>{ol.name}</div>
+ <div style={{fontSize:12,color:'#8b949e'}}>{ol.company||'—'} • Passo {ol.cadencia_step||'—'}</div>
+ </div>
+ <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+ <button onClick={()=>togglePauseOb(ol.id,ol.paused)}
+ style={{background:ol.paused?'rgba(63,185,80,.15)':'rgba(168,85,247,.15)',color:ol.paused?'#3fb950':'var(--zombie)',border:'none',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>
+ {ol.paused?'Retomar':'Pausar'}
+ </button>
+ <button onClick={simulateReply} style={{background:'rgba(16,185,129,.15)',color:'#10b981',border:'none',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>Simular Resp.</button>
+ <button onClick={manualMigrate} style={{background:'rgba(59,130,246,.15)',color:'#3b82f6',border:'none',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>Mover p/ CRM</button>
+ </div>
+ </div><div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+ <div style={{width:40,height:40,borderRadius:10,background:'var(--amber)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,color:'black',fontSize:16}}>
+ {ol.name?.charAt(0)||'?'}
+ </div>
+ <div>
+ <div style={{fontWeight:800,color:'white',fontSize:18}}>{ol.name}</div>
+ <div style={{fontSize:12,color:'#8b949e'}}>{ol.company||'—'} • Passo {ol.cadencia_step||'—'}</div>
+ </div>
+ <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+ <button onClick={()=>togglePauseOb(ol.id,ol.paused)}
+ style={{background:ol.paused?'rgba(63,185,80,.15)':'rgba(168,85,247,.15)',color:ol.paused?'#3fb950':'var(--zombie)',border:'none',padding:'6px 10px',borderRadius:8,fontSize:12,cursor:'pointer'}}>
+ {ol.paused?'Retomar':'Pausar'}
+ </button>
+ </div>
+ </div>
+
+ <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16,padding:12,background:'rgba(255,255,255,.02)',borderRadius:10}}>
+ <div><span style={{fontSize:11,color:'#8b949e'}}>Telefone</span><div style={{color:'white',fontSize:13}}>{ol.phone||'—'}</div></div>
+ <div><span style={{fontSize:11,color:'#8b949e'}}>Email</span><div style={{color:'white',fontSize:13}}>{ol.email||'—'}</div></div>
+ <div><span style={{fontSize:11,color:'#8b949e'}}>Cargo</span><div style={{color:'white',fontSize:13}}>{ol.job_title||'—'}</div></div>
+ <div><span style={{fontSize:11,color:'#8b949e'}}>Último contato</span><div style={{color:'white',fontSize:13}}>{fmtDate(ol.last_contact)}</div></div>
+ <div><span style={{fontSize:11,color:'#8b949e'}}>Status</span><div style={{color:OB_STAGES.find(s=>s.id===ol.status)?.color||'white',fontSize:13,fontWeight:600}}>{OB_STAGES.find(s=>s.id===ol.status)?.title||ol.status}</div></div>
+ <div><span style={{fontSize:11,color:'#8b949e'}}>Canal</span><div style={{color:'white',fontSize:13}}>{ol.channel||'whatsapp'}</div></div>
+ </div>
+
+ <h4 style={{color:'var(--gold)',margin:'0 0 8px',fontSize:13}}>Hub de Comunicação</h4>
+ <div style={{maxHeight:200,overflowY:'auto',background:'rgba(0,0,0,.2)',borderRadius:10,padding:12,marginBottom:12}}>
+ {loading?<div style={{color:'#8b949e',textAlign:'center'}}>Carregando...</div>:
+ commLog.length===0?<div style={{color:'#30363d',textAlign:'center',padding:12}}>Nenhuma comunicação</div>:
+ commLog.map((c,i)=>(
+ <div key={c.id||i} style={{display:'flex',flexDirection:c.direction==='out'?'row-reverse':'row',marginBottom:8}}>
+ <div style={{maxWidth:'75%',padding:'8px 12px',borderRadius:12,
+ background:c.direction==='out'?'var(--gold)':'var(--surface)',
+ color:c.direction==='out'?'black':'white',
+ border:c.direction==='out'?'none':'1px solid var(--border)',
+ fontSize:12,lineHeight:1.4}}>
+ <div>{c.content}</div>
+ <div style={{fontSize:9,opacity:.6,marginTop:4,textAlign:c.direction==='out'?'right':'left'}}>
+ {c.channel} • {c.sender} • {c.status}
+ </div>
+ </div>
+ </div>
+ ))}
+ </div>
+
+ <div style={{display:'flex',gap:8,marginBottom:16}}>
+ <select value={replyChannel} onChange={e=>setReplyChannel(e.target.value)} style={{width:120}}>
+ <option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="linkedin">LinkedIn</option>
+ </select>
+ <input value={replyMsg} onChange={e=>setReplyMsg(e.target.value)}
+ onKeyDown={e=>{if(e.key==='Enter')sendReply()}}
+ placeholder="Enviar mensagem..." style={{flex:1}}/>
+ <button onClick={sendReply} style={{background:'var(--gold)',color:'black',border:'none',padding:'8px 16px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>Enviar</button>
+ </div>
+
+ <h4 style={{color:'var(--gold)',margin:'0 0 8px',fontSize:13}}>Histórico</h4>
+ <div style={{maxHeight:150,overflowY:'auto'}}>
+ {history.length===0?<div style={{color:'#30363d',textAlign:'center',padding:12}}>Sem histórico</div>:
+ history.map((h,i)=>(
+ <div key={h.id||i} style={{display:'flex',gap:8,padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:12}}>
+ <span style={{color:'var(--gold)',minWidth:80}}>{fmtDate(h.action_date)}</span>
+ <span style={{color:h.channel==='whatsapp'?'#25D366':h.channel==='email'?'#3b82f6':'#8b949e',minWidth:70}}>{h.channel}</span>
+ <span style={{color:'#c9d1d9'}}>{h.action_text}</span>
+ </div>
+ ))}
+ </div>
+ </Modal>
+ );
+};
+
+// PARTE 10h3 — KNOWLEDGE: FORMS E TEXTOS
+
+const FaqForm=({onSave})=>{
+ const[q,setQ]=useState('');
+ const[a,setA]=useState('');
+ return(
+ <div>
+ <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pergunta" style={{marginBottom:8}}/>
+ <textarea value={a} onChange={e=>setA(e.target.value)} placeholder="Resposta" rows={2} style={{marginBottom:8}}/>
+ <button onClick={async()=>{if(q&&a){await onSave({question:q,answer:a});setQ('');setA('')}}} style={{background:'var(--gold)',color:'black',border:'none',padding:'6px 14px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>Salvar</button>
+ </div>
+ );
+};
+
+const ObjectionForm=({onSave})=>{
+ const[obj,setObj]=useState('');
+ const[resp,setResp]=useState('');
+ const[ch,setCh]=useState('whatsapp');
+ const[tone,setTone]=useState('empático');
+ return(
+ <div>
+ <input value={obj} onChange={e=>setObj(e.target.value)} placeholder="Objeção do lead" style={{marginBottom:8}}/>
+ <textarea value={resp} onChange={e=>setResp(e.target.value)} placeholder="Resposta sugerida" rows={2} style={{marginBottom:8}}/>
+ <div style={{display:'flex',gap:8}}>
+ <select value={ch} onChange={e=>setCh(e.target.value)} style={{width:120}}>
+ <option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="linkedin">LinkedIn</option><option value="telefone">Telefone</option>
+ </select>
+ <select value={tone} onChange={e=>setTone(e.target.value)} style={{width:120}}>
+ <option value="empático">Empático</option><option value="consultivo">Consultivo</option><option value="direto">Direto</option><option value="gentil">Gentil</option>
+ </select>
+ <div style={{flex:1}}/>
+ <button onClick={async()=>{if(obj&&resp){await onSave({objection:obj,response:resp,channel:ch,tone,priority:5});setObj('');setResp('')}}} style={{background:'var(--gold)',color:'black',border:'none',padding:'6px 14px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>Salvar</button>
+ </div>
+ </div>
+ );
+};
+
+const TextForm=({onSave})=>{
+ const[t,setT]=useState('');
+ const[c,setC]=useState('geral');
+ const[content,setContent]=useState('');
+ return(
+ <div>
+ <div style={{display:'flex',gap:8,marginBottom:8}}>
+ <input value={t} onChange={e=>setT(e.target.value)} placeholder="Título" style={{flex:1}}/>
+ <select value={c} onChange={e=>setC(e.target.value)} style={{width:140}}>
+ <option value="geral">Geral</option><option value="produto">Produto</option><option value="servico">Serviço</option><option value="empresa">Empresa</option>
+ </select>
+ </div>
+ <textarea value={content} onChange={e=>setContent(e.target.value)} placeholder="Conteúdo..." rows={4} style={{marginBottom:8}}/>
+ <button onClick={async()=>{if(content){await onSave({category:c,title:t,content});setT('');setC('geral');setContent('')}}} style={{background:'var(--gold)',color:'black',border:'none',padding:'6px 14px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>Salvar</button>
+ </div>
+ );
+};
+
+// PARTE 10h1 — KNOWLEDGE VIEW: TABS E DOCUMENTOS
+
+const KnowledgeView=()=>{
+ const tabs=[{id:'docs',label:'📄 Docs'},{id:'urls',label:'🔗 URLs'},{id:'faq',label:'❓ FAQ'},{id:'objections',label:'🛡️ Obj'},{id:'texts',label:'📝 Textos'}];
+ const[urlInput,setUrlInput]=useState('');
+ const fileRef=useRef(null);
+
+ const handleUpload=async(e)=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ await uploadKnowledgeFile(file);
+ e.target.value='';
+ };
+
+ return(
+ <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+ <div style={{display:'flex',gap:4,padding:'12px 24px 0',borderBottom:'1px solid var(--border)'}}>
+ {tabs.map(t=>(
+ <button key={t.id} onClick={()=>setKnowledgeSubView(t.id)} style={{
+ padding:'8px 14px',border:'none',background:'transparent',cursor:'pointer',
+ color:knowledgeSubView===t.id?'var(--gold)':'#8b949e',fontWeight:knowledgeSubView===t.id?700:400,
+ borderBottom:knowledgeSubView===t.id?'2px solid var(--gold)':'2px solid transparent',fontSize:12
+ }}>{t.label}</button>
+ ))}
+ </div>
+ <div style={{flex:1,overflowY:'auto',padding:'16px 24px'}}>
+  {knowledgeSubView==='docs'&&(
+  <div>
+  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+  <h3 style={{color:'var(--text-primary)',margin:0,fontSize:15,fontWeight:600}}>📄 Documentos — {knowledge.docs.length}</h3>
+  <div>
+  <input type="file" ref={fileRef} onChange={handleUpload} accept=".pdf,.txt,.md,.docx,.xlsx,.xls,.csv,.pptx" style={{display:'none'}}/>
+  <button onClick={()=>fileRef.current?.click()} style={{background:'var(--gold)',color:'var(--black)',border:'none',padding:'7px 14px',borderRadius:7,fontWeight:700,fontSize:11.5,cursor:'pointer'}}>+ Upload</button>
+  </div>
+  </div>
+  <div style={{fontSize:11,color:'var(--text-muted)',marginBottom:12}}>PDF, DOCX, XLSX, CSV, PPTX, TXT, MD</div>
+  {knowledge.docs.length===0?<div style={{textAlign:'center',color:'var(--border)',padding:40}}>Nenhum documento. Envie arquivos para a base de conhecimento.</div>:
+  knowledge.docs.map(d=>(
+  <div key={d.id} style={{background:'var(--graphite)',border:'1px solid var(--border-subtle)',borderRadius:8,padding:12,marginBottom:6,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+  <div>
+  <div style={{fontWeight:600,color:'var(--text-primary)',fontSize:13}}>{d.title||d.filename}</div>
+  <div style={{fontSize:10.5,color:'var(--text-muted)',marginTop:2}}>{(d.file_type||d.content_type||'?').toUpperCase()} • {d.char_count?`${(d.char_count/1000).toFixed(1)}k chars`:(d.word_count?`${d.word_count} palavras`:'')} • {d.summary?.substring(0,120)||'Sem resumo'}</div>
+  </div>
+  <button onClick={async()=>{await B.deleteKnowledgeDoc(d.id);await loadData()}} style={{background:'rgba(239,68,68,.1)',color:'#ef4444',border:'none',padding:'5px 8px',borderRadius:5,fontSize:10,cursor:'pointer'}}>🗑️</button>
+  </div>
+  ))}
+  </div>
+  )}
+ {knowledgeSubView==='urls'&&(
+ <div>
+ <div style={{display:'flex',gap:8,marginBottom:16}}>
+ <input value={urlInput} onChange={e=>setUrlInput(e.target.value)} placeholder="https://..." style={{flex:1}}/>
+ <button onClick={async()=>{if(urlInput.trim()){await addKnowledgeUrl(urlInput);setUrlInput('')}}} style={{background:'var(--gold)',color:'black',border:'none',padding:'8px 16px',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>+ Adicionar</button>
+ </div>
+ {knowledge.urls.map(u=>(
+ <div key={u.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:12,marginBottom:8,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+ <a href={u.url} target="_blank" style={{color:'#58a6ff',fontSize:13,flex:1}}>{u.title||u.url}</a>
+ <button onClick={async()=>{await B.deleteKnowledgeUrl(u.id);await loadData()}} style={{background:'rgba(239,68,68,.15)',color:'#ef4444',border:'none',padding:'6px 10px',borderRadius:6,fontSize:11,cursor:'pointer'}}>🗑️</button>
+ </div>
+ ))}
+ </div>
+ )}
+ {knowledgeSubView==='faq'&&(
+ <div>
+ <h3 style={{color:'white',margin:'0 0 12px'}}>❓ FAQ — {knowledge.faq.length}</h3>
+ {knowledge.faq.map(f=>(
+ <div key={f.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14,marginBottom:8}}>
+ <div style={{fontWeight:700,color:'var(--gold)',fontSize:13}}>P: {f.question}</div>
+ <div style={{color:'white',fontSize:13,marginTop:6}}>R: {f.answer}</div>
+ </div>
+ ))}
+ <div style={{background:'rgba(255,255,255,.02)',border:'1px dashed var(--border)',borderRadius:10,padding:14,marginTop:12}}>
+ <div style={{fontSize:12,color:'var(--gold)',fontWeight:600,marginBottom:8}}>+ Nova Pergunta</div>
+ <FaqForm onSave={saveFaq}/>
+ </div>
+ </div>
+ )}
+ {knowledgeSubView==='objections'&&(
+ <div>
+ <h3 style={{color:'white',margin:'0 0 12px'}}>🛡️ Objeções — {knowledge.objections.length}</h3>
+ {knowledge.objections.map(o=>(
+ <div key={o.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14,marginBottom:8}}>
+ <div style={{fontWeight:700,color:'#ef4444',fontSize:13}}>"{o.objection}"</div>
+ <div style={{color:'white',fontSize:13,marginTop:6}}>{o.response}</div>
+ <div style={{fontSize:11,color:'#8b949e',marginTop:4}}>{o.channel} • {o.tone} • P{o.priority}</div>
+ </div>
+ ))}
+ <div style={{background:'rgba(255,255,255,.02)',border:'1px dashed var(--border)',borderRadius:10,padding:14,marginTop:12}}>
+ <div style={{fontSize:12,color:'var(--gold)',fontWeight:600,marginBottom:8}}>+ Nova Objeção</div>
+ <ObjectionForm onSave={saveObjection}/>
+ </div>
+ </div>
+ )}
+ {knowledgeSubView==='texts'&&(
+ <div>
+ <h3 style={{color:'white',margin:'0 0 12px'}}>📝 Textos — {knowledge.texts.length}</h3>
+ {knowledge.texts.map(t=>(
+ <div key={t.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:14,marginBottom:8}}>
+ <div style={{display:'flex',justifyContent:'space-between'}}>
+ <div style={{fontWeight:700,color:'white',fontSize:13}}>{t.title||'Sem título'}</div>
+ <span style={{fontSize:10,background:'rgba(197,160,89,.15)',color:'var(--gold)',padding:'2px 8px',borderRadius:6}}>{t.category}</span>
+ </div>
+ <div style={{color:'#c9d1d9',fontSize:12,marginTop:6}}>{t.content?.substring(0,200)}{t.content?.length>200?'...':''}</div>
+ </div>
+ ))}
+ <div style={{background:'rgba(255,255,255,.02)',border:'1px dashed var(--border)',borderRadius:10,padding:14,marginTop:12}}>
+ <div style={{fontSize:12,color:'var(--gold)',fontWeight:600,marginBottom:8}}>+ Novo Texto</div>
+ <TextForm onSave={saveText}/>
+ </div>
+ </div>
+ )}
+ </div>
+ </div>
+ );
+};
+
+// PARTE 10i — RENDER FINAL
+
+const Content=()=>{
+ if(loading)return<LoadingScreen/>;
+ return(
+ <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+ <TopBar/>
+ {view==='kanban'&&<KanbanView/>}
+ {view==='outbound'&&<OutboundView/>}
+ {view==='indicacoes'&&<IndicacoesView/>}
+ {view==='agent'&&<AgentView/>}
+ {view==='knowledge'&&<KnowledgeView/>}
+ {view==='chat'&&<ChatView/>}
+ {view==='partners'&&<PartnersView/>}
+ {view==='bi'&&<BiView/>}
+ </div>
+ );
+};
+
+const Modals=()=>(
+ <>
+ {modal.type==='newLead'&&<NewLeadModal/>}
+ {modal.type==='leadDetail'&&modal.data&&<LeadDetailModal lead={modal.data}/>}
+ {modal.type==='partner'&&<PartnerModal partner={modal.data}/>}
+ {modal.type==='obDetail'&&modal.data&&<ObDetailModal ol={modal.data}/>}
+ {modal.type==='approachTemplate'&&modal.data&&<ApproachTemplateModal lead={modal.data}/>}
+ {modal.type==='stageMove'&&modal.data&&<StageMoveModal data={modal.data}/>}
+ {modal.type==='outputProtocol'&&<OutputProtocolModal/>}
+ </>
+);
+
+const Root=()=>(
+ <div style={{display:'flex',height:'100vh',width:'100vw',overflow:'hidden',background:'var(--black)'}}>
+ <Sidebar/>
+ <Content/>
+ <Modals/>
+ </div>
+);
+
+  stateRef.current = {
+    view, setView,
+    partners, setPartners,
+    leads, setLeads,
+    actions, setActions,
+    stages, setStages,
+    obLeads, setObLeads,
+    obGeladeira, setObGeladeira,
+    cadences, setCadences,
+    agentConfig, setAgentConfig,
+    knowledge, setKnowledge,
+    chatHistory, setChatHistory,
+    activityLog, setActivityLog,
+    agentLog, setAgentLog,
+    dashboard, setDashboard,
+    indicacoes, setIndicacoes,
+    loading, setLoading,
+    pFilter, setPFilter,
+    search, setSearch,
+    modal, setModal,
+    obSubView, setObSubView,
+    agentSubView, setAgentSubView,
+    knowledgeSubView, setKnowledgeSubView,
+    editingCadence, setEditingCadence,
+    contentRef, sidebarRef, chatEndRef, chatInputRef,
+    loadData, setupGrabScroll, gsContent, gsSidebar,
+    openWA, saveLead, deleteLead, moveLead, savePartner, deletePartner,
+    saveTask, toggleTask, addToOutbound, moveObLead, togglePauseOb,
+    reactivateFromGeladeira, discardFromGeladeira, saveCadence, deleteCadence,
+    duplicateCadence, sendChat, importLeadFile, uploadKnowledgeFile,
+    addKnowledgeUrl, saveFaq, saveObjection, saveText, saveAgentConfig,
+    stats, filteredLeads,
+    G5X_STAGES, OB_STAGES, ORIGEM_INDICACAO, B, fmtDate, chatSending, setChatSending, fetchEngineStatus, engineStatus, engineLogs, setEngineStatus, setEngineLogs, handleObLeadDrop
+  };
+
+ return <Root/>;
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

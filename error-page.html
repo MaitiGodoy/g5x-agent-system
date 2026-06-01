@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eita porra...</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a2e;
+            color: white;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+        .robot {
+            font-size: 120px;
+            animation: bounce 1s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.5));
+        }
+        @keyframes bounce {
+            from { transform: translateY(0) rotate(-5deg); }
+            to { transform: translateY(-20px) rotate(5deg); }
+        }
+        .eyes {
+            display: inline-block;
+            position: relative;
+            width: 120px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+        .eye {
+            width: 40px;
+            height: 40px;
+            background: #00ff88;
+            border-radius: 50%;
+            position: absolute;
+            animation: blink 3s ease-in-out infinite;
+            box-shadow: 0 0 15px #00ff88;
+        }
+        .eye.left { left: 15px; top: 20px; }
+        .eye.right { right: 15px; top: 20px; }
+        .eye::after {
+            content: '\2022';
+            font-size: 30px;
+            color: #0a0a2e;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: look 2s ease-in-out infinite;
+        }
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        @keyframes look {
+            0%, 100% { transform: translate(-50%, -50%); }
+            25% { transform: translate(-30%, -50%); }
+            75% { transform: translate(-70%, -50%); }
+        }
+        .mouth {
+            width: 60px;
+            height: 30px;
+            border: 4px solid #00ff88;
+            border-top: none;
+            border-radius: 0 0 30px 30px;
+            margin: 10px auto;
+            animation: talk 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes talk {
+            from { height: 20px; }
+            to { height: 35px; }
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #ff6b6b;
+            margin: 30px 0;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            animation: shake 0.3s ease-in-out infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+        .sub {
+            font-size: 1.2em;
+            color: #888;
+            margin: 20px 0;
+        }
+        .insult {
+            font-size: 0.9em;
+            color: #ff6b6b;
+            margin-top: 30px;
+            padding: 15px;
+            border: 2px dashed #ff6b6b;
+            border-radius: 10px;
+            display: inline-block;
+            animation: glow 2s ease-in-out infinite;
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.6); }
+        }
+        .sparkle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: sparkle 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="sparkle" style="top:10%;left:20%;animation-delay:0s"></div>
+    <div class="sparkle" style="top:30%;left:80%;animation-delay:0.5s"></div>
+    <div class="sparkle" style="top:70%;left:15%;animation-delay:1s"></div>
+    <div class="sparkle" style="top:50%;left:70%;animation-delay:1.5s"></div>
+    <div class="sparkle" style="top:85%;left:45%;animation-delay:0.3s"></div>
+    <div class="sparkle" style="top:15%;left:60%;animation-delay:0.8s"></div>
+    <div class="sparkle" style="top:60%;left:90%;animation-delay:1.2s"></div>
+    
+    <div class="container">
+        <div class="eyes">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+        </div>
+        <div class="mouth"></div>
+        
+        <h1>ihhhhhhhhhhh deu ruim...</h1>
+        <p class="sub">volta l&aacute; e conserta!</p>
+        
+        <div class="insult">
+            eu avisei que n&atilde;o era aqui n&eacute;...<br>
+            mas n&atilde;o, o corno quis tentar<br>
+            agora fica a&iacute; olhando pro rob&ocirc;<br>
+            que pelo menos eu funciono &#x1F916;
+        </div>
+    </div>
+</body>
+</html>
