@@ -1,4 +1,9 @@
-with open('/etc/nginx/sites-available/maiti-godoy-portal', 'r') as f:
+import subprocess
+import sys
+
+NGINX_CONF = '/etc/nginx/sites-available/maiti-godoy-portal'
+
+with open(NGINX_CONF, 'r') as f:
     c = f.read()
 
 old = "        proxy_intercept_errors on;\n        error_page 500 502 503 504 /error.html;\n    }\n\n    location / {"
@@ -27,6 +32,20 @@ new = """        proxy_intercept_errors on;
 
 c = c.replace(old, new)
 
-with open('/etc/nginx/sites-available/maiti-godoy-portal', 'w') as f:
+with open(NGINX_CONF + '.tmp', 'w') as f:
     f.write(c)
-print('OK')
+
+# Validate nginx syntax before applying
+result = subprocess.run(['nginx', '-t', '-c', NGINX_CONF + '.tmp'],
+                       capture_output=True, text=True)
+if result.returncode != 0:
+    print(f'❌ NGINX config INVALID: {result.stderr}')
+    sys.exit(1)
+
+# Apply config
+subprocess.run(['cp', NGINX_CONF + '.tmp', NGINX_CONF], check=True)
+subprocess.run(['rm', NGINX_CONF + '.tmp'], check=True)
+
+# Reload nginx
+subprocess.run(['nginx', '-s', 'reload'], check=True)
+print('✅ Nginx config applied and reloaded successfully')

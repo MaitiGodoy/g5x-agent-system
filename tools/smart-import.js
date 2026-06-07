@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const llm = require('./llm');
+const dbm = require('./db');
 const XLSX = require('xlsx');
 
 // ── Schema do Lead CRM (todos os campos possíveis) ──
@@ -578,7 +579,7 @@ async function processList(input, options = {}) {
       // Criar account (lead com contatos)
       const primaryContact = contacts[0];
       const account = {
-        id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+        id: dbm.genId(),
         // Dados da empresa
         company: companyData.company || primaryContact.name,
         fantasia: companyData.fantasia || '',
@@ -742,7 +743,7 @@ function createCompanyLead(data) {
   }
   
   const lead = {
-    id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+    id: dbm.genId(),
     name: extractedName || 'Sem nome',
     company: data.company || '',
     fantasia: data.fantasia || '',

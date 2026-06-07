@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ── Config ──
-const DATA_DIR = (process.env.DATA_DIR && require('fs').existsSync(process.env.DATA_DIR)) ? process.env.DATA_DIR : path.join(__dirname, '..');
+const DATA_DIR = (process.env.DATA_DIR && fs.existsSync(process.env.DATA_DIR)) ? process.env.DATA_DIR : path.join(__dirname, '..');
 const dbFile = path.join(DATA_DIR, 'crm-db.json');
 
 function readDb() {
@@ -133,8 +133,32 @@ async function findRelevantContextString(query, topK = 3) {
   return results.map(r => `[${r.source}] ${r.content}`).join('\n\n---\n\n');
 }
 
+// ── Valida se o texto é realmente legível (não binário corrompido) ──
+function isTextReadable(text) {
+  if (!text || text.length < 50) return false;
+  // Verifica se contém PDF header (binário não extraído)
+  if (text.includes('%PDF-')) return false;
+  // Verifica se há palavras reais (sequências de 4+ letras)
+  const words = text.match(/[a-zA-ZÀ-ú]{4,}/g);
+  if (!words || words.length < 5) return false;
+  // Razão de caracteres alfabéticos vs total
+  const alpha = (text.match(/[a-zA-ZÀ-ú\s]/g) || []).length;
+  const alphaRatio = alpha / text.length;
+  return alphaRatio > 0.4;
+}
+
 // ── Ingest de documento (para uso programático) ──
 function ingestDocument(text, metadata = {}) {
+  // Validar que o texto é realmente legível
+  if (!isTextReadable(text)) {
+    throw new Error(
+      `OCR FAILED: "${metadata.filename || 'documento'}" — O PDF não pôde ser decodificado. ` +
+      'O arquivo parece conter apenas binário/images sem extração de texto. ' +
+      'Tente: (1) converter para .txt/.md antes de importar, (2) usar um OCR externo, ' +
+      'ou (3) colar o texto manualmente.'
+    );
+  }
+
   const CHUNK_SIZE = 2000;
   const chunks = [];
   for (let i = 0; i < text.length; i += CHUNK_SIZE) {

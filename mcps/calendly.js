@@ -66,7 +66,7 @@ app.get('/event-types', async (req, res) => {
 app.post('/scheduling-links', async (req, res) => {
   const { event_type_uri, lead_name, lead_email, owner_uri, min_time, max_time } = req.body;
 
-  if (event_type_uri || !CALENDLY_TOKEN) {
+  if (!event_type_uri || !CALENDLY_TOKEN) {
     // Modo simulado: retorna link fake
     const fakeLink = `https://calendly.com/g5x/diagnostico?name=${encodeURIComponent(lead_name || 'Lead')}&email=${encodeURIComponent(lead_email || '')}`;
     console.log(`[Calendly][SIMULADO] Link gerado para ${lead_name}: ${fakeLink}`);

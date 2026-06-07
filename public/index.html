@@ -14,40 +14,63 @@
  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
  <script src="bridge.js"></script>
- <style>
- :root{--gold:#C5A059;--gold-bright:#d4af61;--gold-dim:rgba(197,160,89,.12);--black:#000000;--graphite:#0a0a0a;--graphite-light:#111111;--border:#222222;--border-subtle:#141414;--text-primary:#ffffff;--text-secondary:#a0a0a0;--text-muted:#666666;--danger:#e11d48;--zombie:#7c3aed;--amber:#d97706;--success:#16a34a} *{font-family:'Outfit',sans-serif;box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
- body{background-color:var(--black);color:var(--text-primary);margin:0;overflow:hidden;height:100vh;display:flex}
- ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}::-webkit-scrollbar-thumb:hover{background:var(--gold)}
- .grab-scroll{cursor:grab;user-select:none;overflow:auto!important}.grab-scroll:active{cursor:grabbing}
- .lead-card,.partner-card,.bi-card{transition:all .25s cubic-bezier(.16,1,.3,1);border-left:3px solid transparent;cursor:pointer}
- .lead-card:hover,.partner-card:hover,.bi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.6);border-left-color:var(--gold)}
- .lead-card.stalled{border-left-color:var(--danger)!important;animation:pulse-red 2s infinite}
- .lead-card.zombie{border-left-color:var(--zombie)!important;animation:pulse-purple 3s infinite}
- @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}70%{box-shadow:0 0 0 4px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
- @keyframes pulse-purple{0%{box-shadow:0 0 0 0 rgba(168,85,247,.3)}70%{box-shadow:0 0 0 4px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
- .glass{background:rgba(17,17,17,.85);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border:1px solid var(--border)}
- .wa-btn{background:#25D366;color:white;transition:.2s;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}.wa-btn:hover{background:#128C7E;transform:scale(1.03)}
- input,select,textarea{background:var(--graphite)!important;border:1px solid var(--border)!important;border-radius:8px!important;padding:10px 14px!important;color:var(--text-primary)!important;font-weight:400;width:100%;font-size:14px;transition:border-color .2s}
- input[type="file"]{display:none!important;width:0!important;height:0!important;padding:0!important;border:none!important}
- input:focus,textarea:focus{border-color:var(--gold)!important;outline:none;box-shadow:0 0 0 1px var(--gold-dim)}select{cursor:pointer}
- input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(.7);opacity:.5}
- button{transition:all .15s}button:active{transform:scale(.97)}
- .drop-target{background:var(--gold-dim)!important;border:1.5px dashed var(--gold)!important}
- .kanban-column{background:var(--graphite);border:1px solid var(--border-subtle);border-radius:12px}
- .ob-card{transition:all .2s cubic-bezier(.16,1,.3,1);border-left:3px solid transparent;cursor:pointer}
- .ob-card:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.4);border-left-color:var(--amber)}
- @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.animate-in{animation:fadeIn .25s ease-out}
- .chat-bubble{max-width:85%;padding:14px 20px;border-radius:16px;margin-bottom:12px;font-size:14.5px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;box-shadow:0 4px 12px rgba(0,0,0,.5);position:relative;animation:msg-in .25s ease-out;letter-spacing:.02em}
- .chat-bubble code,.chat-bubble pre{font-family:'JetBrains Mono','Consolas',monospace;background:var(--black);padding:4px 8px;border-radius:6px;font-size:.88em;line-height:1.4;border:1px solid var(--border)}
- .chat-user{background:var(--gold);color:var(--black);margin-left:auto;border-bottom-right-radius:4px;font-weight:600}
- .chat-agent{background:var(--graphite);color:var(--text-primary);border:1px solid var(--border);border-bottom-left-radius:4px} @keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
- .chat-input-glass{background:rgba(17,17,17,.75)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border)!important;border-radius:12px!important}
- .kanban-card-compact{padding:10px 12px;margin-bottom:6px}
- .kanban-card-compact .card-name{font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3}
- .kanban-card-compact .card-company{font-size:11px;color:var(--text-secondary);margin-top:2px}
- .kanban-card-compact .card-value{font-size:12px;color:var(--gold);font-weight:600;margin-top:4px}
- @media(max-width:768px){.sidebar{width:64px!important;padding:6px!important}.sidebar-text{display:none}.main-content{padding:6px!important}}
- </style>
+  <style>
+  :root{
+    --gold:#C5A059;
+    --gold-bright:#d4af61;
+    --gold-dim:rgba(197,160,89,.12);
+    --black:#0d1117;
+    --graphite:#161b22;
+    --graphite-light:#1c2333;
+    --border:#30363d;
+    --border-subtle:#21262d;
+    --text-primary:#f0f6fc;
+    --text-secondary:#8b949e;
+    --text-muted:#6e7681;
+    --danger:#e11d48;
+    --zombie:#7c3aed;
+    --amber:#d97706;
+    --success:#16a34a;
+    --bg-gradient:linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+    --shadow-card:0 2px 8px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+    --shadow-card-hover:0 8px 24px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.2);
+    --radius-sm:6px;
+    --radius-md:10px;
+    --radius-lg:16px
+  }
+  *{font-family:'Outfit',sans-serif;box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  body{background:var(--bg-gradient);color:var(--text-primary);margin:0;overflow:hidden;height:100vh;display:flex}
+  ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}::-webkit-scrollbar-thumb:hover{background:var(--gold)}
+  .grab-scroll{cursor:grab;user-select:none;overflow:auto!important}.grab-scroll:active{cursor:grabbing}
+  .lead-card,.partner-card,.bi-card{transition:all .25s cubic-bezier(.16,1,.3,1);border-left:3px solid transparent;cursor:pointer;box-shadow:var(--shadow-card)}
+  .lead-card:hover,.partner-card:hover,.bi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-hover);border-left-color:var(--gold)}
+  .lead-card.stalled{border-left-color:var(--danger)!important;animation:pulse-red 2s infinite}
+  .lead-card.zombie{border-left-color:var(--zombie)!important;animation:pulse-purple 3s infinite}
+  @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}70%{box-shadow:0 0 0 4px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+  @keyframes pulse-purple{0%{box-shadow:0 0 0 0 rgba(168,85,247,.3)}70%{box-shadow:0 0 0 4px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
+  .glass{background:rgba(22,27,34,.85);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  .wa-btn{background:#25D366;color:white;transition:.2s;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius-sm)}.wa-btn:hover{background:#128C7E;transform:scale(1.03)}
+  input,select,textarea{background:var(--graphite)!important;border:1px solid var(--border)!important;border-radius:var(--radius-md)!important;padding:10px 14px!important;color:var(--text-primary)!important;font-weight:400;width:100%;font-size:14px;transition:border-color .2s,box-shadow .2s}
+  input[type="file"]{display:none!important;width:0!important;height:0!important;padding:0!important;border:none!important}
+  input:focus,textarea:focus{border-color:var(--gold)!important;outline:none;box-shadow:0 0 0 2px var(--gold-dim)}select{cursor:pointer}
+  input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(.7);opacity:.5}
+  button{transition:all .15s;border-radius:var(--radius-sm)}button:active{transform:scale(.97)}
+  .drop-target{background:var(--gold-dim)!important;border:1.5px dashed var(--gold)!important}
+  .kanban-column{background:var(--graphite);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-card)}
+  .ob-card{transition:all .2s cubic-bezier(.16,1,.3,1);border-left:3px solid transparent;cursor:pointer;background:var(--graphite-light)!important;border-radius:var(--radius-md)}
+  .ob-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-card-hover);border-left-color:var(--amber)}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.animate-in{animation:fadeIn .25s ease-out}
+  .chat-bubble{max-width:85%;padding:14px 20px;border-radius:var(--radius-lg);margin-bottom:12px;font-size:14.5px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;box-shadow:var(--shadow-card);position:relative;animation:msg-in .25s ease-out;letter-spacing:.02em}
+  .chat-bubble code,.chat-bubble pre{font-family:'JetBrains Mono','Consolas',monospace;background:rgba(0,0,0,.3);padding:4px 8px;border-radius:var(--radius-sm);font-size:.88em;line-height:1.4;border:1px solid var(--border)}
+  .chat-user{background:var(--gold);color:#0d1117;margin-left:auto;border-bottom-right-radius:4px;font-weight:600}
+  .chat-agent{background:var(--graphite-light);color:var(--text-primary);border:1px solid var(--border);border-bottom-left-radius:4px} @keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .chat-input-glass{background:rgba(22,27,34,.85)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border)!important;border-radius:var(--radius-lg)!important;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  .kanban-card-compact{padding:10px 12px;margin-bottom:6px;background:var(--graphite-light)!important;border-radius:var(--radius-sm);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .kanban-card-compact .card-name{font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3}
+  .kanban-card-compact .card-company{font-size:11px;color:var(--text-secondary);margin-top:2px}
+  .kanban-card-compact .card-value{font-size:12px;color:var(--gold);font-weight:600;margin-top:4px}
+  @media(max-width:768px){.sidebar{width:64px!important;padding:6px!important}.sidebar-text{display:none}.main-content{padding:6px!important}}
+  </style>
 </head>
 <body>
 <div id="root"></div>
@@ -192,7 +215,7 @@ const CADENCE_PIPELINE_STAGES = [{
   channel: 'any',
   label: 'Engajado'
 }];
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const uid = () => crypto.randomUUID ? crypto.randomUUID().slice(0,13) : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 const getDaysInStage = ts => {
   if (!ts) return 0;
   return Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
@@ -260,6 +283,7 @@ const App = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [chatSending, setChatSending] = useState(false);
   const chatInputRef = useRef(null);
+  // chatInput removido — textarea uncontrolled para evitar flickering a cada tecla
   const stateRef = useRef(null);
   const [activityLog, setActivityLog] = useState([]);
   const [agentLog, setAgentLog] = useState([]);
@@ -320,7 +344,12 @@ const App = () => {
         texts: kd[4] || [],
         observations: kd[5] || []
       });
-      setChatHistory(cl || []);
+      setChatHistory(prev => {
+        if (!cl || !cl.length) return prev;
+        const serverIds = new Set(cl.map(m => m.id));
+        const localOnly = prev.filter(m => !serverIds.has(m.id));
+        return [...localOnly, ...cl];
+      });
       setActivityLog(al || []);
       setAgentLog(agl || []);
       setDashboard(db);
@@ -334,20 +363,13 @@ const App = () => {
     loadData();
   }, [loadData]);
 
-  // Auto-refresh a cada 30s
+  // Auto-refresh a cada 120s (evita flicker durante digitação)
   useEffect(() => {
-    const iv = setInterval(loadData, 30000);
+    const iv = setInterval(loadData, 120000);
     return () => clearInterval(iv);
   }, [loadData]);
 
-  // Rolagem automática do chat
-  useEffect(() => {
-    if (view === 'chat' && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({
-        behavior: 'smooth'
-      });
-    }
-  }, [chatHistory, view]);
+  // Rolagem automática do chat (apenas no sendChat via setTimeout)
 
   // Polling de status do motor quando ativo na visualização do agente
   useEffect(() => {
@@ -586,11 +608,9 @@ const App = () => {
 
   // CHAT
   const sendChat = async () => {
-    const el = chatInputRef.current;
-    if (!el || !el.value.trim() || chatSending) return;
-    const msg = el.value.trim();
-    el.value = '';
-    el.focus();
+    const msg = chatInputRef.current?.value?.trim();
+    if (!msg || chatSending) return;
+    if (chatInputRef.current) chatInputRef.current.value = '';
     setChatSending(true);
     setChatHistory(prev => [...prev, {
       id: Date.now().toString(),
@@ -742,7 +762,7 @@ const App = () => {
     className: "sidebar",
     style: {
       width: 220,
-      background: 'var(--black)',
+      background: 'var(--graphite)',
       borderRight: '1px solid var(--border-subtle)',
       padding: '20px 12px',
       display: 'flex',
@@ -767,7 +787,7 @@ const App = () => {
   }, "G5X"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
-      color: 'var(--text-muted)',
+      color: 'var(--text-secondary)',
       marginTop: 2,
       fontWeight: 300,
       letterSpacing: '.5px',
@@ -847,7 +867,7 @@ const App = () => {
       justifyContent: 'space-between',
       padding: '12px 24px',
       borderBottom: '1px solid var(--border-subtle)',
-      background: 'var(--black)'
+      background: 'var(--graphite)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -977,7 +997,7 @@ const App = () => {
       justifyContent: 'center',
       height: '100vh',
       width: '100%',
-      background: 'var(--black)'
+      background: 'var(--graphite)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1350,7 +1370,7 @@ const App = () => {
         flexDirection: 'column',
         flex: 1,
         overflow: 'hidden',
-        background: 'var(--black)'
+        background: 'transparent'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2931,25 +2951,21 @@ const App = () => {
   // PARTE 9 — CHAT VIEW
 
   const ChatView = () => {
-    useEffect(() => {
-      if (chatEndRef.current) chatEndRef.current.scrollIntoView({
-        behavior: 'smooth'
-      });
-    }, [chatHistory]);
+    // ChatView
     return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
         flex: 1,
         overflow: 'hidden',
-        background: 'var(--black)',
+        background: 'var(--graphite)',
         position: 'relative'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '14px 24px',
         borderBottom: '1px solid var(--border-subtle)',
-        background: 'var(--black)'
+        background: 'var(--graphite)'
       }
     }, /*#__PURE__*/React.createElement("h3", {
       style: {
@@ -2973,7 +2989,7 @@ const App = () => {
         padding: '16px 24px 100px 24px',
         display: 'flex',
         flexDirection: 'column',
-        background: 'var(--black)'
+        background: 'transparent'
       }
     }, chatHistory.length === 0 && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6073,7 +6089,7 @@ Como o ${indicador} fez a ponte, faz sentido alinharmos 15 minutos para projetar
       height: '100vh',
       width: '100vw',
       overflow: 'hidden',
-      background: 'var(--black)'
+      background: 'var(--bg-gradient)'
     }
   }, /*#__PURE__*/React.createElement(Sidebar, null), /*#__PURE__*/React.createElement(Content, null), /*#__PURE__*/React.createElement(Modals, null));
   stateRef.current = {

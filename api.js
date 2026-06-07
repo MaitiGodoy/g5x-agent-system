@@ -1,37 +1,37 @@
 const express = require('express');
 const multer = require('multer');
-const { PDFParse } = require('pdf-parse');
+const pdfParse = require('pdf-parse');
 const llm = require('./tools/llm');
 const rag = require('./tools/rag');
 const smartImport = require('./tools/smart-import');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const dbm = require('./tools/db');
 
 const router = express.Router();
 
-// Diretórios configuráveis (Docker volumes ou local)
 const DATA_DIR = (process.env.DATA_DIR && fs.existsSync(process.env.DATA_DIR)) ? process.env.DATA_DIR : __dirname;
 const UPLOAD_DIR = (process.env.UPLOAD_DIR && fs.existsSync(process.env.UPLOAD_DIR)) ? process.env.UPLOAD_DIR : path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const upload = multer({ dest: UPLOAD_DIR });
 
-// ── Banco JSON local ──
-const dbFile = path.join(DATA_DIR, 'crm-db.json');
-let db = {};
-if (fs.existsSync(dbFile)) {
-  db = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
-}
+const ALLOWED_TABLES = new Set([
+  'leads', 'ob_leads', 'cadences', 'partners', 'indications',
+  'knowledge_docs', 'knowledge_faq', 'knowledge_objections', 'knowledge_texts',
+  'knowledge_urls', 'knowledge_observations', 'chat', 'bookings', 'bookings_config',
+  'agent_config', 'agent_log', 'activity_log', 'ob_history', 'geladeira', 'hil_queue',
+]);
 
-function saveDb() {
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-}
-
+let data = {};
+function loadDb() { data = dbm.readDb(); }
+function saveDb() { dbm.writeDb(data); }
 function getTable(table) {
-  if (!db[table]) { db[table] = []; saveDb(); }
-  return db[table];
+  if (!data[table]) { data[table] = []; }
+  return data[table];
 }
+loadDb();
 
 // ── Lead Score engine ──
 function calcLeadScore(lead) {
@@ -67,8 +67,8 @@ function calcLeadScore(lead) {
 // ── Notification helper ──
 function logActivity(type, leadId, text, channel = 'sistema') {
   const log = getTable('activity_log');
-  log.push({ id: Date.now().toString(), type, lead_id: leadId, text, channel, created_at: new Date().toISOString() });
-  if (log.length > 1000) db['activity_log'] = log.slice(-1000);
+  log.push({ id: dbm.genId(), type, lead_id: leadId, text, channel, created_at: new Date().toISOString() });
+  if (log.length > 1000) data['activity_log'] = log.slice(-1000);
   saveDb();
 }
 
@@ -77,12 +77,12 @@ router.get('/enrich/cnpj/:cnpj', (req, res) => {
   const cnpj = req.params.cnpj.replace(/\D/g, '');
   if (cnpj.length !== 14) return res.status(400).json({ error: 'CNPJ inválido' });
   
-  https.get(`https://receitaws.com.br/v1/cnpj/${cnpj}`, (resp) => {
-    let data = '';
-    resp.on('data', (chunk) => data += chunk);
+  const cnpjReq = https.get(`https://receitaws.com.br/v1/cnpj/${cnpj}`, (resp) => {
+    let raw = '';
+    resp.on('data', (chunk) => raw += chunk);
     resp.on('end', () => {
       try {
-        const parsed = JSON.parse(data);
+        const parsed = JSON.parse(raw);
         if (parsed.status === 'ERROR') return res.status(400).json({ error: parsed.message });
         res.json({
           company: parsed.nome,
@@ -96,7 +96,9 @@ router.get('/enrich/cnpj/:cnpj', (req, res) => {
         });
       } catch (e) { res.status(500).json({ error: 'Erro ao analisar resposta' }); }
     });
-  }).on('error', (err) => res.status(500).json({ error: err.message }));
+  });
+  cnpjReq.setTimeout(8000, () => { cnpjReq.destroy(); res.status(504).json({ error: 'Timeout na consulta CNPJ' }); });
+  cnpjReq.on('error', (err) => res.status(500).json({ error: err.message }));
 });
 
 // ============================================================
@@ -116,10 +118,25 @@ router.post('/knowledge/upload', upload.single('file'), async (req, res) => {
     try {
       if (ext === '.pdf') {
         const dataBuffer = fs.readFileSync(filePath);
-        const parser = new PDFParse({ data: dataBuffer });
-        const data = await parser.getText();
+        const data = await pdfParse(dataBuffer);
         fullText = data.text || '';
         contentType = 'pdf';
+        // Validação anti-binário: checar se extraiu texto real
+        if (fullText.includes('%PDF-') || fullText.length < 50) {
+          // PDF não foi decodificado → tentar fallback de leitura binária
+          // mas marcar para o usuário saber que precisa de OCR
+          const hasRealText = (fullText.match(/[a-zA-ZÀ-ú]{4,}/g) || []).length > 5;
+          const alphaRatio = (fullText.match(/[a-zA-ZÀ-ú\s]/g) || []).length / Math.max(fullText.length, 1);
+          if (!hasRealText || alphaRatio < 0.3) {
+            console.warn(`[PDF] ⚠️ "${req.file.originalname}" parece conter apenas binário (alpha: ${(alphaRatio*100).toFixed(1)}%).`);
+            return res.status(422).json({
+              error: 'O PDF não pôde ser decodificado corretamente — contém apenas dados binários/imagens sem texto extraível.',
+              hint: 'Tente: (1) converter o PDF para .txt antes de importar, (2) usar um OCR externo como o Google Docs, ' +
+                    'ou (3) colar o texto manualmente na aba de Conhecimento.',
+              ocr_failed: true
+            });
+          }
+        }
       }
       else if (['.xlsx', '.xls'].includes(ext)) {
         const xlsx = require('xlsx');
@@ -179,7 +196,7 @@ router.post('/knowledge/upload', upload.single('file'), async (req, res) => {
     }
 
     const ingested = rag.ingestDocument(fullText, {
-      id: Date.now().toString(),
+      id: dbm.genId(),
       filename: req.file.originalname
     });
 
@@ -251,7 +268,7 @@ router.post('/leads/import', upload.single('file'), async (req, res) => {
       if (req.body.target === 'outbound') {
         const obLeads = getTable('ob_leads');
         obLeads.push({
-          id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+          id: dbm.genId(),
           crm_lead_id: lead.id, name: lead.name, company: lead.company,
           phone: lead.phone, email: lead.email, linkedin_url: lead.linkedin_url,
           job_title: lead.job_title, status: 'fila',
@@ -297,7 +314,7 @@ router.post('/leads/import-text', async (req, res) => {
       if (target === 'outbound') {
         const obLeads = getTable('ob_leads');
         obLeads.push({
-          id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+          id: dbm.genId(),
           crm_lead_id: lead.id, name: lead.name, company: lead.company,
           phone: lead.phone, email: lead.email, linkedin_url: lead.linkedin_url,
           job_title: lead.job_title, status: 'fila',
@@ -405,7 +422,7 @@ router.get('/indications', (req, res) => {
 router.post('/indications', (req, res) => {
   const { referrer_name, referrer_contact, referred_name, referred_email, referred_phone, referred_job, referred_company, message, status } = req.body;
   const indication = {
-    id: Date.now().toString(),
+    id: dbm.genId(),
     referrer_name: referrer_name || '',
     referrer_contact: referrer_contact || '',
     referred_name: referred_name || '',
@@ -431,7 +448,7 @@ router.put('/indications/:id', (req, res) => {
 });
 
 router.delete('/indications/:id', (req, res) => {
-  db['indications'] = getTable('indications').filter(i => i.id !== req.params.id);
+  data['indications'] = getTable('indications').filter(i => i.id !== req.params.id);
   saveDb(); res.json({ success: true });
 });
 
@@ -440,7 +457,7 @@ router.post('/indications/:id/convert', (req, res) => {
   const indication = indications.find(i => i.id === req.params.id);
   if (!indication) return res.status(404).json({ error: 'Indicação não encontrada' });
   const newLead = {
-    id: Date.now().toString(),
+    id: dbm.genId(),
     name: indication.referred_name || 'Sem nome',
     company: indication.referred_company || '',
     phone: indication.referred_phone || '',
@@ -505,7 +522,7 @@ router.post('/chat', async (req, res) => {
       por_estagio: leads.reduce((acc,l) => { acc[l.status]=(acc[l.status]||0)+1; return acc; }, {}),
       leads_recentes: leads.slice(-8).map(l => ({ id: l.id, nome: l.name, empresa: l.company, status: l.status, valor: l.value, email: l.email, phone: l.phone })),
       ob_fila_preview: obLeads.filter(l=>l.status==='fila').slice(0,5).map(l => ({ id: l.id, nome: l.name, empresa: l.company, step: l.cadencia_step })),
-      indicacoes: getTable('indications').filter(i => i.status !== 'converted').length,
+      indicacoes_count: getTable('indications').filter(i => i.status !== 'converted').length,
       indicacoes_hot: getTable('indications').filter(i => i.status === 'hot').length,
       agendados: leads.filter(l => l.calendly_link).length,
       calendly_configured: !!process.env.CALENDLY_TOKEN,
@@ -645,7 +662,7 @@ REGRAS DE COMPORTAMENTO:
     }
 
     const agentMsg = {
-      id: Date.now().toString(),
+      id: dbm.genId(),
       role: 'agent',
       content: cleanResposta.trim(),
       ts: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -654,14 +671,14 @@ REGRAS DE COMPORTAMENTO:
     const chatTable = getTable('chat');
     chatTable.push({ id: (Date.now()-1).toString(), role: 'user', content: message, ts: agentMsg.ts });
     chatTable.push(agentMsg);
-    if (chatTable.length > 100) db['chat'] = chatTable.slice(-100);
+    if (chatTable.length > 100) data['chat'] = chatTable.slice(-100);
     saveDb();
 
     res.json(agentMsg);
   } catch (error) {
     console.error('[Chat] Erro:', error);
     res.json({
-      id: Date.now().toString(),
+      id: dbm.genId(),
       role: 'agent',
       content: `❌ Erro na IA: ${error.message?.substring(0,200) || 'Verifique as API keys no .env'}`,
       ts: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -673,7 +690,7 @@ async function executeAgentAction({ action, data }) {
   console.log(`[Action] ${action}:`, JSON.stringify(data));
   switch (action) {
     case 'create_lead': {
-      const newLead = { id: Date.now().toString(), ...data, source: 'agent', status: data.status||'novo', created_at: new Date().toISOString(), last_stage_change: new Date().toISOString() };
+      const newLead = { id: dbm.genId(), ...data, source: 'agent', status: data.status||'novo', created_at: new Date().toISOString(), last_stage_change: new Date().toISOString() };
       getTable('leads').push(newLead);
       saveDb();
       return `Lead "${data.name}" criado no CRM (ID: ${newLead.id})`;
@@ -691,13 +708,18 @@ async function executeAgentAction({ action, data }) {
       return `Lead não encontrado`;
     }
     case 'delete_lead': {
-      const before = getTable('leads').length;
-      db['leads'] = getTable('leads').filter(l => l.id !== data.id);
-      saveDb();
-      return before > db['leads'].length ? `Lead removido` : `Lead ID ${data.id} não encontrado`;
+      const leads = getTable('leads');
+      const before = leads.length;
+      const filteredLeads = leads.filter(l => l.id !== data.id);
+      if (filteredLeads.length < before) {
+        data['leads'] = filteredLeads;
+        saveDb();
+        return `Lead removido (ID: ${data.id})`;
+      }
+      return `Lead ID ${data.id} não encontrado`;
     }
     case 'create_cadence': {
-      const cad = { id: Date.now().toString(), ...data, created_at: new Date().toISOString() };
+      const cad = { id: dbm.genId(), ...data, created_at: new Date().toISOString() };
       getTable('cadences').push(cad);
       saveDb();
       return `Cadência "${data.name}" criada com ${data.cadence_steps?.length||0} passos`;
@@ -705,30 +727,30 @@ async function executeAgentAction({ action, data }) {
     case 'add_to_outbound': {
       const lead = getTable('leads').find(l => l.id === data.crm_lead_id);
       if (!lead) return `Lead não encontrado`;
-      const ob = { id: Date.now().toString(), crm_lead_id: lead.id, name: lead.name, company: lead.company, phone: lead.phone, email: lead.email, status: 'fila', cadencia_id: data.cadencia_id||'', cadencia_step: 1, channel: 'whatsapp', paused: false, last_contact: new Date().toISOString().split('T')[0], created_at: new Date().toISOString() };
+      const ob = { id: dbm.genId(), crm_lead_id: lead.id, name: lead.name, company: lead.company, phone: lead.phone, email: lead.email, status: 'fila', cadencia_id: data.cadencia_id||'', cadencia_step: 1, channel: 'whatsapp', paused: false, last_contact: new Date().toISOString().split('T')[0], created_at: new Date().toISOString() };
       getTable('ob_leads').push(ob);
       saveDb();
       return `"${lead.name}" adicionado ao outbound`;
     }
     case 'create_partner': {
-      const p = { id: Date.now().toString(), ...data, created_at: new Date().toISOString() };
+      const p = { id: dbm.genId(), ...data, created_at: new Date().toISOString() };
       getTable('partners').push(p);
       saveDb();
       return `Parceiro "${data.name}" criado`;
     }
     case 'add_faq': {
-      getTable('knowledge_faq').push({ id: Date.now().toString(), ...data });
+      getTable('knowledge_faq').push({ id: dbm.genId(), ...data });
       saveDb();
       return `FAQ adicionada à base de conhecimento`;
     }
     case 'add_objection': {
-      getTable('knowledge_objections').push({ id: Date.now().toString(), ...data });
+      getTable('knowledge_objections').push({ id: dbm.genId(), ...data });
       saveDb();
       return `Quebra de objeção adicionada`;
     }
     case 'create_indication': {
       const ind = {
-        id: Date.now().toString(),
+        id: dbm.genId(),
         referrer_name: data.referrer_name || '',
         referrer_contact: data.referrer_contact || '',
         referred_name: data.referred_name || '',
@@ -753,6 +775,7 @@ async function executeAgentAction({ action, data }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lead_id: lead.id, lead_name: lead.name, lead_email: data.lead_email || lead.email }),
+          signal: AbortSignal.timeout(10000),
         });
         const result = await resp.json();
         if (result.success) {
@@ -772,6 +795,7 @@ async function executeAgentAction({ action, data }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
+          signal: AbortSignal.timeout(10000),
         });
         const result = await resp.json();
         return result.success ? `✅ Email enviado para ${data.to}` : `Falha ao enviar email`;
@@ -784,7 +808,7 @@ async function executeAgentAction({ action, data }) {
       const ind = indications.find(i => i.id === data.id);
       if (!ind) return `Indicação não encontrada`;
       const newLead = {
-        id: Date.now().toString(),
+        id: dbm.genId(),
         name: ind.referred_name || 'Sem nome',
         company: ind.referred_company || '',
         phone: ind.referred_phone || '',
@@ -812,7 +836,8 @@ async function executeAgentAction({ action, data }) {
       if (!ob) return `OB Lead não encontrado`;
       const leads = getTable('leads');
       const lead = leads.find(l => l.id === ob.crm_lead_id);
-      db['ob_leads'] = obLeads.filter(o => o.id !== ob.id);
+      const filteredObLeads = obLeads.filter(o => o.id !== ob.id);
+      data['ob_leads'] = filteredObLeads;
       if (lead) {
         lead.status = 'diagnostico_agendado';
         lead.last_stage_change = new Date().toISOString();
@@ -856,13 +881,13 @@ router.get('/dashboard', (req, res) => {
 const knowledgeKeys = ['urls','faq','objections','texts','observations'];
 router.get('/knowledge/docs', (req, res) => res.json(getTable('knowledge_docs')));
 router.delete('/knowledge/docs/:id', (req, res) => {
-  db['knowledge_docs'] = getTable('knowledge_docs').filter(i => i.id !== req.params.id);
+  data['knowledge_docs'] = getTable('knowledge_docs').filter(i => i.id !== req.params.id);
   saveDb(); res.json({ success: true });
 });
 knowledgeKeys.forEach(k => {
   router.get(`/knowledge/${k}`, (req, res) => res.json(getTable(`knowledge_${k}`)));
   router.post(`/knowledge/${k}`, (req, res) => {
-    const item = { id: Date.now().toString(), ...req.body };
+    const item = { id: dbm.genId(), ...req.body };
     getTable(`knowledge_${k}`).push(item); saveDb(); res.json(item);
   });
   router.put(`/knowledge/${k}/:id`, (req, res) => {
@@ -872,7 +897,7 @@ knowledgeKeys.forEach(k => {
     else res.status(404).json({ error: 'Not found' });
   });
   router.delete(`/knowledge/${k}/:id`, (req, res) => {
-    db[`knowledge_${k}`] = getTable(`knowledge_${k}`).filter(i => i.id !== req.params.id);
+    data[`knowledge_${k}`] = getTable(`knowledge_${k}`).filter(i => i.id !== req.params.id);
     saveDb(); res.json({ success: true });
   });
 });
@@ -926,7 +951,7 @@ router.get('/ob-leads/:id/history', (req, res) => {
   res.json(getTable('ob_history').filter(h => h.ob_lead_id === req.params.id));
 });
 router.post('/ob-leads/:id/history', (req, res) => {
-  const item = { id: Date.now().toString(), ob_lead_id: req.params.id, ...req.body, created_at: new Date().toISOString() };
+  const item = { id: dbm.genId(), ob_lead_id: req.params.id, ...req.body, created_at: new Date().toISOString() };
   getTable('ob_history').push(item); saveDb(); res.json(item);
 });
 
@@ -1033,7 +1058,7 @@ router.post('/booking/confirm', async (req, res) => {
   
   // Criar booking
   const booking = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    id: dbm.genId(),
     lead_id,
     lead_name,
     lead_email,
@@ -1046,7 +1071,7 @@ router.post('/booking/confirm', async (req, res) => {
     google_event_id: '',
     reminder_sent: false,
     created_at: new Date().toISOString(),
-    booking_link: `${process.env.VPS_URL || 'http://2.24.71.246:3000'}/booking/confirm/${Date.now().toString(36)}`
+    booking_link: `${process.env.VPS_URL || 'http://2.24.71.246:3000'}/booking/confirm/${dbm.genId()}`
   };
   
   bookings.push(booking);
@@ -1087,7 +1112,7 @@ router.post('/booking/confirm', async (req, res) => {
 });
 
 // Página pública de booking (para enviar ao lead)
-router.get('/booking/page/:token', (req, res) => {
+router.get('/booking/confirm/:token', (req, res) => {
   const bookings = getTable('bookings');
   const booking = bookings.find(b => b.booking_link?.includes(req.params.token));
   if (!booking) return res.status(404).json({ error: 'Link inválido' });
@@ -1256,7 +1281,7 @@ function ensureMcpDefaults(config) {
 router.get('/agent-config', (req, res) => {
   const configs = getTable('agent_config');
   if (configs.length === 0) {
-    const def = { id: Date.now().toString(), nome: 'Madalena', persona: 'SDR consultivo especialista em vendas B2B outbound', running: false, horario_inicio: '08:00', horario_fim: '18:00', mcps: { ...MCP_DEFAULTS }, created_at: new Date().toISOString() };
+    const def = { id: dbm.genId(), nome: 'Madalena', persona: 'SDR consultivo especialista em vendas B2B outbound', running: false, horario_inicio: '08:00', horario_fim: '18:00', mcps: { ...MCP_DEFAULTS }, created_at: new Date().toISOString() };
     Object.keys(MCP_DEFAULTS).forEach(k => def.mcps[k] = { ...MCP_DEFAULTS[k] });
     configs.push(def);
     saveDb();
@@ -1268,42 +1293,51 @@ router.get('/agent-config', (req, res) => {
 
 router.put('/agent-config', (req, res) => {
   const configs = getTable('agent_config');
+  let started = false;
   if (configs.length === 0) {
-    const newCfg = { id: Date.now().toString(), ...req.body, created_at: new Date().toISOString() };
+    const newCfg = { id: dbm.genId(), ...req.body, created_at: new Date().toISOString() };
     ensureMcpDefaults(newCfg);
     configs.push(newCfg);
   } else {
+    const wasRunning = configs[0].running;
     Object.assign(configs[0], req.body, { updated_at: new Date().toISOString() });
     ensureMcpDefaults(configs[0]);
+    if (!wasRunning && configs[0].running) {
+      engine.start().catch(console.error);
+      started = true;
+    }
   }
   saveDb();
-  res.json(configs[0]);
+  res.json({ ...configs[0], engine_started: started });
 });
 
-// ── CRUD Genérico ──
-router.get('/:table', (req, res) => {
+// ── CRUD Genérico (com validação de tabelas) ──
+function validateTable(req, res, next) {
   let table = req.params.table.replace(/-/g, '_');
-  res.json(getTable(table));
+  if (!ALLOWED_TABLES.has(table)) return res.status(400).json({ error: 'Tabela não permitida' });
+  req.tableName = table;
+  next();
+}
+router.get('/:table', validateTable, (req, res) => {
+  res.json(getTable(req.tableName));
 });
-router.get('/:table/:id', (req, res) => {
-  let table = req.params.table.replace(/-/g, '_');
-  res.json(getTable(table).find(i => i.id === req.params.id) || null);
+router.get('/:table/:id', validateTable, (req, res) => {
+  res.json(getTable(req.tableName).find(i => i.id === req.params.id) || null);
 });
-router.post('/:table', (req, res) => {
-  let table = req.params.table.replace(/-/g, '_');
-  const newItem = { id: Date.now().toString(), ...req.body, created_at: new Date().toISOString() };
-  getTable(table).push(newItem); saveDb(); res.json(newItem);
+router.post('/:table', validateTable, (req, res) => {
+  const safe = dbm.cleanInput(req.body);
+  const newItem = { id: dbm.genId(), ...safe, created_at: new Date().toISOString() };
+  getTable(req.tableName).push(newItem); saveDb(); res.json(newItem);
 });
-router.put('/:table/:id', (req, res) => {
-  let table = req.params.table.replace(/-/g, '_');
-  const items = getTable(table);
+router.put('/:table/:id', validateTable, (req, res) => {
+  const safe = dbm.cleanInput(req.body);
+  const items = getTable(req.tableName);
   const index = items.findIndex(i => i.id === req.params.id);
-  if (index > -1) { items[index] = { ...items[index], ...req.body, updated_at: new Date().toISOString() }; saveDb(); res.json(items[index]); }
+  if (index > -1) { items[index] = { ...items[index], ...safe, updated_at: new Date().toISOString() }; saveDb(); res.json(items[index]); }
   else res.status(404).json({ error: 'Not found' });
 });
-router.delete('/:table/:id', (req, res) => {
-  let table = req.params.table.replace(/-/g, '_');
-  db[table] = getTable(table).filter(i => i.id !== req.params.id);
+router.delete('/:table/:id', validateTable, (req, res) => {
+  data[req.tableName] = getTable(req.tableName).filter(i => i.id !== req.params.id);
   saveDb(); res.json({ success: true });
 });
 

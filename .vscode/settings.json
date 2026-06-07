@@ -1,0 +1,18 @@
+{
+  "javascript.suggest.enabled": true,
+  "javascript.validate.enable": true,
+  "typescript.suggest.enabled": true,
+  "typescript.validate.enable": true,
+  "js/ts.implicitProjectConfig.checkJs": true,
+  "javascript.suggest.autoImports": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.associations": {
+    "*.js": "javascript"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "public/index.html": false
+  }
+}

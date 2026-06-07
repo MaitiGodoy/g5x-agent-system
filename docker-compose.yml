@@ -1,11 +1,34 @@
-# ═══════════════════════════════════════════
-# G5X MASTER OS — Docker Compose Production
-# ═══════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
+# G5X MASTER OS — Docker Compose Production (VPS)
+# ═══════════════════════════════════════════════════════════════
 
 services:
+  # ── Servidor CRM + API + Doutor Antimatter Squad v4.7 ──
+  g5x-server:
+    build: .
+    container_name: g5x-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - UPLOAD_DIR=/app/uploads
+      - DOUTOR_ENABLED=true
+      - DOUTOR_PYTHON=python
+    volumes:
+      - g5x-data:/app/data
+      - g5x-uploads:/app/uploads
+    networks:
+      - g5x-net
+
   # ── MCP WhatsApp ──
   mcp-whatsapp:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
     container_name: g5x-mcp-whatsapp
     restart: unless-stopped
     ports:
@@ -23,7 +46,9 @@ services:
 
   # ── MCP Email ──
   mcp-email:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
     container_name: g5x-mcp-email
     restart: unless-stopped
     ports:
@@ -41,7 +66,9 @@ services:
 
   # ── MCP LinkedIn ──
   mcp-linkedin:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
     container_name: g5x-mcp-linkedin
     restart: unless-stopped
     ports:
@@ -59,7 +86,9 @@ services:
 
   # ── MCP Calendly ──
   mcp-calendly:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
     container_name: g5x-mcp-calendly
     restart: unless-stopped
     ports:
@@ -75,32 +104,7 @@ services:
     volumes:
       - g5x-data:/app/data
 
-  # ── Servidor CRM + API ──
-  # ── Servidor CRM + API ──
-  g5x-server:
-    build: .
-    container_name: g5x-server
-    restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=production
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - DATA_DIR=/app/data
-      - UPLOAD_DIR=/app/uploads
-    volumes:
-      - g5x-data:/app/data
-      - g5x-uploads:/app/uploads
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - g5x-net
-
-  # ── Redis para BullMQ ──
+  # ── Redis (opcional — para fila BullMQ se necessário) ──
   redis:
     image: redis:7-alpine
     container_name: g5x-redis
@@ -115,6 +119,8 @@ services:
       retries: 5
     networks:
       - g5x-net
+    profiles:
+      - with-redis
 
 volumes:
   g5x-data:

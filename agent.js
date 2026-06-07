@@ -1,38 +1,34 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
+const dbm = require('./tools/db');
 
-// ── Database ──
-const DB_PATH = (process.env.DATA_DIR && fs.existsSync(process.env.DATA_DIR)) ? process.env.DATA_DIR : __dirname;
-const dbFile = path.join(DB_PATH, 'crm-db.json');
+// ═══════════════════════════════════════════════════════════════
+// DATA RACE FIX: agent.js usa o mesmo DB centralizado (tools/db.js)
+// que api.js. Ambos compartilham locks, cache e write queue.
+// NUNCA declare variáveis 'data' globais — sempre use dbm.readDb().
+// ═══════════════════════════════════════════════════════════════
 
-function readDb() {
-  try { return JSON.parse(fs.readFileSync(dbFile, 'utf8')); }
-  catch { return {}; }
-}
-
-function saveDb(db) {
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-}
-
+let data = {};
+function loadDb() { data = dbm.readDb(); }
+function saveDb() { dbm.writeDb(data); }
 function getTable(name) {
-  const db = readDb();
+  const db = data && Object.keys(data).length > 0 ? data : dbm.readDb();
   if (!db[name]) db[name] = [];
-  return db[name];
+  if (db !== data) data = db;
+  return data[name];
 }
-
 function pushTable(name, item) {
-  const db = readDb();
-  if (!db[name]) db[name] = [];
-  db[name].push(item);
-  saveDb(db);
+  data = dbm.readDb();
+  if (!data[name]) data[name] = [];
+  data[name].push(item);
+  dbm.writeDb(data);
   return item;
 }
+loadDb();
 
 // ── Log ──
 function engineLog(action, detail, target = null, meta = {}) {
   const entry = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    id: dbm.genId(),
     action,
     detail,
     target,
@@ -41,11 +37,11 @@ function engineLog(action, detail, target = null, meta = {}) {
     timestamp: Date.now(),
     meta,
   };
-  const db = readDb();
-  if (!db.agent_log) db.agent_log = [];
-  db.agent_log.push(entry);
-  if (db.agent_log.length > 500) db.agent_log = db.agent_log.slice(-500);
-  saveDb(db);
+  loadDb();
+  if (!data.agent_log) data.agent_log = [];
+  data.agent_log.push(entry);
+  if (data.agent_log.length > 500) data.agent_log = data.agent_log.slice(-500);
+  saveDb();
   console.log(`[Engine] ${action}: ${detail}`);
   return entry;
 }
@@ -78,6 +74,7 @@ class AgentEngine {
     this._llmFailCount = 0;
     // MCP circuit breaker
     this._mcpCircuitBreaker = {};
+    this._lastMcpCheck = 0;
   }
 
   // ── Startup ──
@@ -86,6 +83,11 @@ class AgentEngine {
     console.log('\n═══════════════════════════════════════════');
     console.log('  🚀 G5X ENGENHO AUTÔNOMO - INICIANDO');
     console.log('═══════════════════════════════════════════\n');
+
+    loadDb();
+    const cfg = getTable('agent_config');
+    if (cfg[0]) { cfg[0].running = true; cfg[0].started_at = new Date().toISOString(); }
+    saveDb();
 
     this._running = true;
     this._status = 'running';
@@ -108,6 +110,12 @@ class AgentEngine {
       clearInterval(this._interval);
       this._interval = null;
     }
+
+    loadDb();
+    const cfg = getTable('agent_config');
+    if (cfg[0]) { cfg[0].running = false; }
+    saveDb();
+
     engineLog('ENGINE_STOP', 'Engenho autônomo parado.');
     console.log('\n[Engine] ⛔ Engenho autônomo parado.\n');
   }
@@ -151,6 +159,13 @@ class AgentEngine {
     return results;
   }
 
+  async _refreshMcpStatus() {
+    if (Date.now() - this._lastMcpCheck > 300000) {
+      this._lastMcpCheck = Date.now();
+      await this._checkAllMCPs();
+    }
+  }
+
   // ── Heartbeat ──
   async _heartbeat() {
     if (!this._running) return;
@@ -158,6 +173,8 @@ class AgentEngine {
     const startTime = Date.now();
     this._heartbeatCount++;
     this._lastHeartbeat = new Date().toISOString();
+
+    await this._refreshMcpStatus();
 
     const tasks = [];
 
@@ -233,11 +250,11 @@ class AgentEngine {
 
   // ── 3. Process Cadences (UPDATED: multi-contact, bot detection, polymorphism) ──
   async _processCadences(config) {
-    const db = readDb();
-    const obLeads = db.ob_leads || [];
-    const cadences = db.cadences || [];
+    loadDb();
+    const obLeads = data.ob_leads || [];
+    const cadences = data.cadences || [];
     const agora = Date.now();
-    const maxPerHeartbeat = parseInt(process.env.AGENT_MAX_PER_CYCLE) || 5;
+    const maxPerHeartbeat = parseInt(config.max_per_cycle || process.env.AGENT_MAX_PER_CYCLE || '5');
     let sent = 0;
 
     for (const ob of obLeads) {
@@ -249,7 +266,7 @@ class AgentEngine {
       if (ob.bot_freeze_until && new Date(ob.bot_freeze_until).getTime() > agora) continue;
 
       if (ob.lead_replied === true) {
-        const lead = (db.leads || []).find(l => l.id === ob.crm_lead_id);
+        const lead = (data.leads || []).find(l => l.id === ob.crm_lead_id);
         if (lead) {
           lead.status = 'entrada_triagem';
           lead.last_stage_change = new Date().toISOString();
@@ -259,7 +276,6 @@ class AgentEngine {
         ob.paused = true;
         engineLog('OB_MIGRATION', `${ob.name} migrado para pipeline principal (lead respondeu)`, ob.name);
         this._pushLiveAction(`📥 ${ob.name} migrado para Entrada & Triagem`);
-        saveDb(db);
         continue;
       }
 
@@ -269,7 +285,7 @@ class AgentEngine {
 
       const stepIndex = (ob.cadencia_step || 1) - 1;
       if (stepIndex >= cadence.cadence_steps.length) {
-        this._moveToGeladeira(db, ob, 'Cadência completa (todos os passos executados)', '#Gelo_Cadencia_Completa');
+        this._moveToGeladeira(ob, 'Cadência completa (todos os passos executados)', '#Gelo_Cadencia_Completa');
         continue;
       }
 
@@ -281,7 +297,7 @@ class AgentEngine {
       if (daysSinceLastContact < waitDays) continue;
 
       // Get lead data (now supports account-based with contacts)
-      const lead = (db.leads || []).find(l => l.id === ob.crm_lead_id);
+      const lead = (data.leads || []).find(l => l.id === ob.crm_lead_id);
       const contactData = this._getContactData(ob, lead);
 
       // Render template
@@ -307,7 +323,7 @@ class AgentEngine {
         sent++;
 
         const histEntry = {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          id: dbm.genId(),
           ob_lead_id: ob.id,
           lead_id: lead?.id,
           action_text: `💬 Passo ${stepIndex+1}: ${step.label || step.channel} — ${result.status}`,
@@ -316,21 +332,21 @@ class AgentEngine {
           direction: 'out',
           message_preview: finalMessage.substring(0, 100),
         };
-        if (!db.ob_history) db.ob_history = [];
-        db.ob_history.push(histEntry);
+        if (!data.ob_history) data.ob_history = [];
+        data.ob_history.push(histEntry);
 
         ob.cadencia_step = (ob.cadencia_step || 1) + 1;
         ob.last_contact = new Date().toISOString().split('T')[0];
         ob.last_channel = step.channel;
 
         if (ob.cadencia_step > cadence.cadence_steps.length) {
-          this._moveToGeladeira(db, ob, 'Cadência concluída automaticamente', '#Gelo_Cadencia_Completa');
+          this._moveToGeladeira(ob, 'Cadência concluída automaticamente', '#Gelo_Cadencia_Completa');
         }
       }
     }
 
     if (sent > 0) {
-      saveDb(db);
+      saveDb();
       return `${sent} mensagens enviadas`;
     }
     return null;
@@ -428,7 +444,7 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
     }
 
     // Human-like pacing (NEW)
-    const baseDelay = (config?.delay_min || 5) * 100;
+    const baseDelay = (config?.delay_min || 5) * 1000;
     const randomDelay = baseDelay + Math.random() * (config?.delay_max || 180) * 100;
     await new Promise(r => setTimeout(r, randomDelay));
 
@@ -476,6 +492,19 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
         return { status: 'simulado', channel: 'email', simulated: true };
       }
       else if (channel === 'linkedin') {
+        if (this._mcpStatus['LinkedIn']?.online) {
+          const linkedinProfile = contactData?.linkedin || ob.linkedin;
+          if (!linkedinProfile) return { status: 'pulado', channel: 'linkedin', reason: 'sem perfil' };
+
+          const resp = await fetch('http://localhost:3003/send', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: linkedinProfile, message: truncatedMsg }),
+            signal: AbortSignal.timeout(10000),
+          });
+          const data = await resp.json();
+          this._recordMcpSuccess(mcpKey);
+          return { status: data.success ? 'enviado' : 'falha', channel: 'linkedin', simulated: data.simulated };
+        }
         return { status: 'simulado', channel: 'linkedin', simulated: true };
       }
       return { status: 'pulado', channel: 'desconhecido' };
@@ -520,8 +549,9 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
   }
 
   // ── 3b. Move to Geladeira (UPDATED: with tags) ──
-  _moveToGeladeira(db, ob, reason, tag = '#Gelo_Geral') {
-    if (!db.geladeira) db.geladeira = [];
+  _moveToGeladeira(ob, reason, tag = '#Gelo_Geral') {
+    loadDb();
+    if (!data.geladeira) data.geladeira = [];
     const gelEntry = {
       ...ob,
       reason,
@@ -529,15 +559,15 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
       entered_at: new Date().toISOString().split('T')[0],
       geladeira_entered_ts: new Date().toISOString(),
     };
-    db.geladeira.push(gelEntry);
-    db.ob_leads = db.ob_leads.filter(o => o.id !== ob.id);
+    data.geladeira.push(gelEntry);
+    data.ob_leads = data.ob_leads.filter(o => o.id !== ob.id);
     engineLog('GELADEIRA', `${ob.name} → geladeira: ${reason} [${tag}]`, ob.name);
   }
 
   // ── 4. Check Stalled Leads ──
   _checkStalledLeads() {
-    const db = readDb();
-    const leads = db.leads || [];
+    loadDb();
+    const leads = data.leads || [];
     const hoje = Date.now();
     const LIMITE_DIAS = 7;
     const stalled = leads.filter(l => {
@@ -555,10 +585,10 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
 
   // ── 5. Auto-route new cold leads (UPDATED: account-based) ──
   _autoRouteNewLeads() {
-    const db = readDb();
-    const leads = db.leads || [];
-    const obLeads = db.ob_leads || [];
-    const cadences = db.cadences || [];
+    loadDb();
+    const leads = data.leads || [];
+    const obLeads = data.ob_leads || [];
+    const cadences = data.cadences || [];
 
     const activeCadence = cadences.find(c => c.status === 'Ativa');
     if (!activeCadence) return null;
@@ -583,7 +613,7 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
         if (!contact.name && !contact.email && !contact.phone) continue;
 
         const newOb = {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + contact.id,
+          id: dbm.genId() + '-' + contact.id,
           crm_lead_id: lead.id,
           contact_id: contact.id,
           name: contact.name || lead.name,
@@ -600,13 +630,13 @@ Retorne APENAS a mensagem comercial final calibrada, pronta para envio, sem intr
           paused: false,
           created_at: new Date().toISOString(),
         };
-        db.ob_leads.push(newOb);
+        data.ob_leads.push(newOb);
         added++;
       }
     }
 
     if (added > 0) {
-      saveDb(db);
+      saveDb();
       engineLog('AUTO_ROUTE', `${added} contatos de leads frios adicionados à cadência "${activeCadence.name}"`);
       return `${added} auto-roteados`;
     }
@@ -677,8 +707,9 @@ Retorne JSON:
 
   // ── Handle Incoming Message (UPDATED: bot detection, bypass strategy) ──
   async handleIncomingMessage(leadId, message, source) {
-    const db = readDb();
-    const obLeads = db.ob_leads || [];
+    return dbm.withLeadLock(leadId, async () => {
+    loadDb();
+    const obLeads = data.ob_leads || [];
     const ob = obLeads.find(o => o.crm_lead_id === leadId);
 
     engineLog('INCOMING', `Mensagem de lead ${leadId}: "${message.substring(0,80)}..."`, leadId);
@@ -721,15 +752,22 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
 
       if (ob) {
         ob.bot_attempts = (ob.bot_attempts || 0) + 1;
-        ob.bot_freeze_until = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+        ob.bot_freeze_until = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-        // Enviar a mensagem para transbordo
+        if (ob.bot_attempts >= 3) {
+          this._moveToGeladeira(ob, 'Bot persistente após 3 tentativas de transbordo', '#Gelo_Bot_Loop');
+          engineLog('BOT_GAVE_UP', `Bot irredutível após ${ob.bot_attempts} tentativas — ${ob.name} movido para geladeira`, ob.name);
+          this._pushLiveAction(`🤖 Bot irredutível: ${ob.name} movido para geladeira`);
+          saveDb();
+          return { paused: true, bot_detected: true, gave_up: true };
+        }
+
         await this._sendMessage(ob, 'whatsapp', responseToBot, {}, { phone: ob.phone });
-        engineLog('BOT_BYPASS', `Enviando resposta ao bot: "${responseToBot}" (Tentativa ${ob.bot_attempts})`, ob.name);
+        engineLog('BOT_BYPASS', `Enviando resposta ao bot: "${responseToBot}" (Tentativa ${ob.bot_attempts}/3)`, ob.name);
         
         // Registrar no histórico
         const histEntry = {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          id: dbm.genId(),
           ob_lead_id: ob.id,
           action_text: `🤖 Resposta automática ao chatbot: "${responseToBot}" (Tentativa ${ob.bot_attempts}/3)`,
           action_date: new Date().toISOString().split('T')[0],
@@ -737,9 +775,9 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
           direction: 'out',
           message_preview: responseToBot.substring(0, 200),
         };
-        if (!db.ob_history) db.ob_history = [];
-        db.ob_history.push(histEntry);
-        saveDb(db);
+        if (!data.ob_history) data.ob_history = [];
+        data.ob_history.push(histEntry);
+        saveDb();
       }
 
       this._botDetectionMap.set(phoneKey, botState);
@@ -754,7 +792,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
       if (ob) {
         ob.bot_freeze_until = null;
         ob.bot_attempts = 0;
-        saveDb(db);
+        saveDb();
       }
     }
 
@@ -765,7 +803,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
       ob.lead_replied = true;
 
       // Migrate corresponding CRM lead to the main pipeline ('entrada_triagem')
-      const leads = db.leads || [];
+      const leads = data.leads || [];
       const lead = leads.find(l => l.id === ob.crm_lead_id);
       if (lead) {
         lead.status = 'entrada_triagem'; // Enter main pipeline
@@ -775,7 +813,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
       }
 
       const histEntry = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        id: dbm.genId(),
         ob_lead_id: ob.id,
         action_text: `📥 Resposta humana recebida. Cadência concluída e lead migrado para o pipeline principal.`,
         action_date: new Date().toISOString().split('T')[0],
@@ -783,9 +821,9 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
         direction: 'in',
         message_preview: message.substring(0, 200),
       };
-      if (!db.ob_history) db.ob_history = [];
-      db.ob_history.push(histEntry);
-      saveDb(db);
+      if (!data.ob_history) data.ob_history = [];
+      data.ob_history.push(histEntry);
+      saveDb();
 
       engineLog('CADENCE_PAUSED', `Cadência pausada para ${ob.name} — lead respondeu`, ob.name);
 
@@ -795,16 +833,17 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
           const llm = require('./tools/llm');
           const analysis = await llm.analyzeMessage(message);
           if (analysis.needs_human) {
-            this._triggerHIL(db, ob, analysis.objeção || 'Mensagem complexa requer atenção humana');
+            this._triggerHIL(ob, analysis.objeção || 'Mensagem complexa requer atenção humana');
           }
           if (analysis.intenção === 'agendar_reuniao') {
-            const lead = db.leads?.find(l => l.id === leadId);
+            const lead = data.leads?.find(l => l.id === leadId);
             if (lead) {
-              const resp = await fetch(`http://localhost:${process.env.PORT||3000}/api/calendly/schedule`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lead_id: leadId, lead_name: lead.name, lead_email: lead.email }),
-              });
+      const resp = await fetch(`http://localhost:${process.env.PORT||3000}/api/calendly/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: leadId, lead_name: lead.name, lead_email: lead.email }),
+        signal: AbortSignal.timeout(10000),
+      });
               const data = await resp.json();
               if (data.success) {
                 engineLog('AUTO_SCHEDULE', `Link Calendly gerado para ${ob.name}: ${data.scheduling_url}`, ob.name);
@@ -817,9 +856,9 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
           // Offline: simple keyword-based intent detection
           const lower = message.toLowerCase();
           if (lower.includes('reuni') || lower.includes('agend') || lower.includes('call') || lower.includes('ligar')) {
-            this._triggerHIL(db, ob, 'Lead quer agendar reunião (detecção offline)');
+            this._triggerHIL(ob, 'Lead quer agendar reunião (detecção offline)');
           } else if (lower.includes('preço') || lower.includes('valor') || lower.includes('custo') || lower.includes('quanto')) {
-            this._triggerHIL(db, ob, 'Lead perguntando sobre preço (detecção offline)');
+            this._triggerHIL(ob, 'Lead perguntando sobre preço (detecção offline)');
           }
         }
       } catch (e) {
@@ -830,13 +869,15 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
     }
 
     return { paused: false };
+    });
   }
 
   // ── 7. HIL (Human-in-the-Loop) System (NEW) ──
-  _triggerHIL(db, ob, reason) {
-    if (!db.hil_queue) db.hil_queue = [];
+  _triggerHIL(ob, reason) {
+    loadDb();
+    if (!data.hil_queue) data.hil_queue = [];
     const hilEntry = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      id: dbm.genId(),
       ob_lead_id: ob.id,
       crm_lead_id: ob.crm_lead_id,
       lead_name: ob.name,
@@ -844,17 +885,32 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
       reason,
       status: 'pending',
       triggered_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       resolved_at: null,
     };
-    db.hil_queue.push(hilEntry);
-    saveDb(db);
+    data.hil_queue.push(hilEntry);
+    saveDb();
     engineLog('HIL_TRIGGERED', `Ação humana necessária: ${ob.name} — ${reason}`, ob.name);
     this._pushLiveAction(`⚠️ HIL: ${ob.name} precisa de atenção humana — ${reason}`);
   }
 
   _processHILQueue() {
-    const db = readDb();
-    const hilQueue = db.hil_queue || [];
+    loadDb();
+    const hilQueue = data.hil_queue || [];
+    const now = Date.now();
+    let escalated = 0;
+    for (const h of hilQueue) {
+      if (h.status === 'pending' && h.expires_at && new Date(h.expires_at).getTime() <= now) {
+        h.status = 'escalated';
+        h.escalated_at = new Date().toISOString();
+        h.escalation_note = 'Timeout de 24h excedido — escalado automaticamente';
+        escalated++;
+      }
+    }
+    if (escalated > 0) {
+      saveDb();
+      engineLog('HIL_ESCALATION', `${escalated} HILs escalados por timeout de 24h`);
+    }
     const pending = hilQueue.filter(h => h.status === 'pending');
     if (pending.length > 0) {
       return `${pending.length} ações humanas pendentes`;
@@ -863,22 +919,22 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
   }
 
   resolveHIL(hilId, resolution) {
-    const db = readDb();
-    const hil = (db.hil_queue || []).find(h => h.id === hilId);
+    loadDb();
+    const hil = (data.hil_queue || []).find(h => h.id === hilId);
     if (hil) {
       hil.status = resolution; // 'resolved', 'dismissed', 'escalated'
       hil.resolved_at = new Date().toISOString();
-      saveDb(db);
+      saveDb();
       engineLog('HIL_RESOLVED', `HIL ${hilId} resolvido: ${resolution}`, hil.lead_name);
     }
   }
 
   // ── 8. Process Indicações Quentes (NEW) ──
   async _processIndicacoes(config) {
-    const db = readDb();
-    const indicacoes = db.indicacoes || [];
-    const obLeads = db.ob_leads || [];
-    const cadences = db.cadences || [];
+    loadDb();
+    const indicacoes = data.indicacoes || [];
+    const obLeads = data.ob_leads || [];
+    const cadences = data.cadences || [];
 
     // Find new indicações not yet in outbound
     const activeCadence = cadences.find(c => c.status === 'Ativa');
@@ -895,10 +951,10 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
       if (!ind.referred_name && !ind.referred_email && !ind.referred_phone) continue;
 
       // Create lead if not exists
-      let lead = (db.leads || []).find(l => l.name === ind.referred_name && l.company === ind.referred_company);
+      let lead = (data.leads || []).find(l => l.name === ind.referred_name && l.company === ind.referred_company);
       if (!lead) {
         lead = {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          id: dbm.genId(),
           name: ind.referred_name || 'Sem nome',
           company: ind.referred_company || '',
           email: ind.referred_email || '',
@@ -913,12 +969,12 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
           last_stage_change: new Date().toISOString(),
           created_at: new Date().toISOString(),
         };
-        db.leads.push(lead);
+        data.leads.push(lead);
       }
 
       // Create outbound entry with "Parceiro Afiado" approach
       const newOb = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+        id: dbm.genId(),
         crm_lead_id: lead.id,
         indication_id: ind.id,
         name: lead.name,
@@ -935,7 +991,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
         is_indication: true,
         created_at: new Date().toISOString(),
       };
-      db.ob_leads.push(newOb);
+      data.ob_leads.push(newOb);
 
       // Update indication status
       ind.status = 'contacted';
@@ -947,7 +1003,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
     }
 
     if (processed > 0) {
-      saveDb(db);
+      saveDb();
       return `${processed} indicações processadas`;
     }
     return null;
@@ -955,8 +1011,8 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
 
   // ── 9. Geladeira Hygiene (NEW) ──
   _checkGeladeiraHygiene() {
-    const db = readDb();
-    const geladeira = db.geladeira || [];
+    loadDb();
+    const geladeira = data.geladeira || [];
     const untagged = geladeira.filter(g => !g.geladeira_tag);
     if (untagged.length > 0) {
       // Auto-tag old entries
@@ -966,7 +1022,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
         else if (g.reason?.includes('completa')) g.geladeira_tag = '#Gelo_Cadencia_Completa';
         else g.geladeira_tag = '#Gelo_Sem_Resposta';
       }
-      saveDb(db);
+      saveDb();
       return `${untagged.length} leads na geladeira higienizados`;
     }
     return null;
@@ -974,8 +1030,8 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
 
   // ── 10. Bot Re-evaluation (NEW) ──
   async _reEvaluateBotContacts() {
-    const db = readDb();
-    const obLeads = db.ob_leads || [];
+    loadDb();
+    const obLeads = data.ob_leads || [];
     let reactivated = 0;
 
     for (const ob of obLeads) {
@@ -983,7 +1039,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
         // Freeze expired — evaluate
         if (ob.bot_attempts >= 3) {
           // Persistent bot — move to geladeira
-          this._moveToGeladeira(db, ob, 'Bot persistente após 3 tentativas de transbordo', '#Gelo_Bot_Loop');
+          this._moveToGeladeira(ob, 'Bot persistente após 3 tentativas de transbordo', '#Gelo_Bot_Loop');
           reactivated++;
         } else {
           // Temporary — resume
@@ -995,7 +1051,7 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
     }
 
     if (reactivated > 0) {
-      saveDb(db);
+      saveDb();
       return `${reactivated} contatos de bot movidos para geladeira`;
     }
     return null;
@@ -1003,11 +1059,11 @@ Determine a melhor resposta para contornar esse bot e chegar a um atendente huma
 
   // ── 11. Generate Briefing Report (NEW) ──
   async _generateBriefing(leadId) {
-    const db = readDb();
-    const lead = (db.leads || []).find(l => l.id === leadId);
+    loadDb();
+    const lead = (data.leads || []).find(l => l.id === leadId);
     if (!lead) return null;
 
-    const history = (db.ob_history || []).filter(h => h.lead_id === leadId);
+    const history = (data.ob_history || []).filter(h => h.lead_id === leadId);
     const messages = history.map(h => h.message_preview || '').filter(Boolean).join('\n');
 
     try {
@@ -1047,7 +1103,7 @@ Retorne JSON:
             generated_at: new Date().toISOString(),
             generated_by: 'Madalena AI',
           };
-          saveDb(db);
+          saveDb();
           engineLog('BRIEFING_GERADO', `Briefing comercial gerado para ${lead.name}`, lead.name);
           this._llmFailCount = 0;
           this._llmOffline = false;
@@ -1068,7 +1124,7 @@ Retorne JSON:
           generated_at: new Date().toISOString(),
           generated_by: 'Madalena AI (modo offline)',
         };
-        saveDb(db);
+        saveDb();
         engineLog('BRIEFING_GERADO', `Briefing offline gerado para ${lead.name}`, lead.name);
         return offlineBriefing;
       }

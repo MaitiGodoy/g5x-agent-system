@@ -86,7 +86,7 @@ app.post('/profile/search', async (req, res) => {
 
 // ── Enviar Mensagem ──
 app.post('/send', async (req, res) => {
-  if (process.env.LINKEDIN_CONFIGURED !== 'true' && !LINKEDIN_API_KEY) {
+  if (!LINKEDIN_API_KEY) {
     console.log(`[LinkedIn][SIMULADO] Mensagem para ${req.body.to}: ${(req.body.message||'').substring(0,50)}`);
     return res.json({ success: true, simulated: true, to: req.body.to });
   }
@@ -94,9 +94,21 @@ app.post('/send', async (req, res) => {
   if (LINKEDIN_STRATEGY === 'browser') {
     const br = await getBrowser();
     if (!br) return res.status(503).json({ error: 'Browser não disponível' });
-    // Aqui iria a automação via página do LinkedIn
-    console.log(`[LinkedIn][Browser] Mensagem enviada para ${req.body.to}`);
-    return res.json({ success: true, strategy: 'browser' });
+    try {
+      const page = await br.newPage();
+      await page.goto(`https://www.linkedin.com/in/${req.body.to}/`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('[data-control-name="send_message"]', { timeout: 10000 });
+      await page.click('[data-control-name="send_message"]');
+      await page.waitForSelector('.msg-form__contenteditable', { timeout: 5000 });
+      await page.fill('.msg-form__contenteditable', req.body.message);
+      await page.click('.msg-form__send-button');
+      await page.close();
+      console.log(`[LinkedIn][Browser] Mensagem enviada para ${req.body.to}`);
+      return res.json({ success: true, strategy: 'browser' });
+    } catch (e) {
+      console.warn(`[LinkedIn][Browser] Erro: ${e.message}`);
+      return res.status(503).json({ error: `Browser automation failed: ${e.message}` });
+    }
   }
 
   const data = await linkedinApiFetch('/send-message', {

@@ -56,12 +56,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ── Send Email ──
-app.post('/send', async (req, res) => {
-  const { to, subject, message, template, vars, cc, bcc, attachments } = req.body;
-
+async function sendSingleEmail({ to, subject, message, template, vars, cc, bcc, attachments }) {
   if (!to || !subject) {
-    return res.status(400).json({ error: 'Destinatário (to) e assunto (subject) são obrigatórios' });
+    return { success: false, error: 'Destinatário (to) e assunto (subject) são obrigatórios' };
   }
 
   let html = message;
@@ -72,9 +69,8 @@ app.post('/send', async (req, res) => {
 
   const transport = await getTransport();
   if (!transport) {
-    // Fallback: log envio simulado
     console.log(`[Email][SIMULADO] Para: ${to} | Assunto: ${subject}`);
-    return res.json({ success: true, simulated: true, to, subject });
+    return { success: true, simulated: true, to, subject };
   }
 
   try {
@@ -86,11 +82,18 @@ app.post('/send', async (req, res) => {
       attachments: attachments || [],
     });
     console.log(`[Email] Enviado para ${to} | ID: ${info.messageId}`);
-    res.json({ success: true, messageId: info.messageId, to, subject });
+    return { success: true, messageId: info.messageId, to, subject };
   } catch (err) {
     console.error('[Email] Erro ao enviar:', err.message);
-    res.status(500).json({ error: err.message });
+    return { success: false, error: err.message };
   }
+}
+
+// ── Send Email ──
+app.post('/send', async (req, res) => {
+  const result = await sendSingleEmail(req.body);
+  if (result.success) return res.json(result);
+  res.status(500).json(result);
 });
 
 // ── Send Bulk (cadência) ──
@@ -102,22 +105,13 @@ app.post('/send-bulk', async (req, res) => {
 
   const results = [];
   for (const r of recipients) {
-    try {
-      const resp = await fetch(`http://localhost:${port}/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: r.email,
-          subject,
-          template,
-          vars: { ...vars, ...r.vars, nome: r.name },
-        }),
-      });
-      const data = await resp.json();
-      results.push({ email: r.email, status: data.success ? 'enviado' : 'erro', error: data.error });
-    } catch (e) {
-      results.push({ email: r.email, status: 'erro', error: e.message });
-    }
+    const data = await sendSingleEmail({
+      to: r.email,
+      subject,
+      template,
+      vars: { ...vars, ...r.vars, nome: r.name },
+    });
+    results.push({ email: r.email, status: data.success ? 'enviado' : 'erro', error: data.error });
   }
 
   console.log(`[Email] Bulk: ${results.filter(r=>r.status==='enviado').length}/${recipients.length} enviados`);
